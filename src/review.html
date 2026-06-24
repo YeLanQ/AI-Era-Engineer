@@ -4,24 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>人工审核 - AI工程师能力评估</title>
+<link rel="stylesheet" href="/theme.css">
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --bg: #f0f2f5;
-  --card: #ffffff;
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: #eef2ff;
-  --text: #1e293b;
-  --text-secondary: #64748b;
-  --border: #e2e8f0;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --radius: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-lg: 0 4px 6px rgba(0,0,0,.07), 0 10px 15px rgba(0,0,0,.1);
-}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   background: var(--bg);
@@ -32,8 +17,8 @@ body {
 .container { max-width: 960px; margin: 0 auto; padding: 24px; }
 
 .header {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  color: #fff;
+  background: var(--header-bg);
+  color: var(--header-text);
   border-radius: var(--radius);
   padding: 24px 32px;
   margin-bottom: 24px;
@@ -51,8 +36,8 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
-.badge-pending { background: #fef3c7; color: #92400e; }
-.badge-reviewed { background: #d1fae5; color: #065f46; }
+.badge-pending { background: var(--badge-pending-bg); color: var(--badge-pending-text); }
+.badge-reviewed { background: var(--badge-reviewed-bg); color: var(--badge-reviewed-text); }
 
 .card {
   background: var(--card);
@@ -88,8 +73,8 @@ body {
 .btn-primary:hover { background: var(--primary-hover); }
 .btn-success { background: var(--success); color: #fff; }
 .btn-success:hover { background: #059669; }
-.btn-secondary { background: #f1f5f9; color: var(--text); }
-.btn-secondary:hover { background: #e2e8f0; }
+.btn-secondary { background: var(--bg-secondary); color: var(--text); }
+.btn-secondary:hover { background: var(--border); }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-sm { padding: 6px 14px; font-size: 12px; }
 .btn-block { width: 100%; }
@@ -101,7 +86,7 @@ body {
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
 th { font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
-tr:hover td { background: #f8fafc; }
+tr:hover td { background: var(--bg-subtle); }
 tr.clickable { cursor: pointer; }
 .status-tag {
   display: inline-block;
@@ -110,9 +95,9 @@ tr.clickable { cursor: pointer; }
   font-size: 11px;
   font-weight: 500;
 }
-.status-ai_scored { background: #fef3c7; color: #92400e; }
-.status-reviewed { background: #d1fae5; color: #065f46; }
-.status-completed { background: #e0e7ff; color: #3730a3; }
+.status-ai_scored { background: var(--status-scored-bg); color: var(--status-scored-text); }
+.status-reviewed { background: var(--status-reviewed-bg); color: var(--status-reviewed-text); }
+.status-completed { background: var(--status-completed-bg); color: var(--status-completed-text); }
 
 .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
 .info-item { }
@@ -128,17 +113,17 @@ tr.clickable { cursor: pointer; }
 .question-block .q-title { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
 .question-block .q-desc {
   font-size: 13px; color: var(--text-secondary);
-  background: #f8fafc; padding: 10px; border-radius: 6px;
+  background: var(--bg-subtle); padding: 10px; border-radius: 6px;
   margin-bottom: 12px; white-space: pre-wrap;
 }
 .question-block .q-answer {
   font-size: 13px;
-  background: #f0fdf4; padding: 10px; border-radius: 6px;
+  background: var(--q-answer-bg); padding: 10px; border-radius: 6px;
   margin-bottom: 8px; white-space: pre-wrap;
 }
 .question-block .q-ailog {
   font-size: 13px;
-  background: #fffbeb; padding: 10px; border-radius: 6px;
+  background: var(--q-ailog-bg); padding: 10px; border-radius: 6px;
   white-space: pre-wrap;
 }
 .question-block .label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
@@ -160,7 +145,7 @@ tr.clickable { cursor: pointer; }
   gap: 8px;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
 .criterion-row .name { font-weight: 500; }
@@ -171,7 +156,7 @@ tr.clickable { cursor: pointer; }
 }
 .criterion-row .reasoning { font-size: 12px; color: var(--text-secondary); }
 .criterion-row .reasoning summary { cursor: pointer; color: var(--text-secondary); }
-.criterion-row .reasoning .text { margin-top: 4px; padding: 6px; background: #f8fafc; border-radius: 4px; font-size: 12px; }
+.criterion-row .reasoning .text { margin-top: 4px; padding: 6px; background: var(--bg-subtle); border-radius: 4px; font-size: 12px; }
 .criterion-row input[type="number"] {
   width: 70px;
   padding: 6px 8px;
@@ -219,7 +204,7 @@ tr.clickable { cursor: pointer; }
 .score-summary .item {
   text-align: center;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--bg-subtle);
   border-radius: 8px;
 }
 .score-summary .item .dim { font-size: 11px; color: var(--text-secondary); }
@@ -242,7 +227,7 @@ tr.clickable { cursor: pointer; }
   display: inline-block;
   width: 18px;
   height: 18px;
-  border: 3px solid rgba(79,70,229,.2);
+  border: 3px solid var(--loading-track);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin .6s linear infinite;
@@ -276,6 +261,10 @@ tr.clickable { cursor: pointer; }
       <div style="margin-top:6px;"><a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;padding:4px 10px;font-size:11px;">← 返回主页</a></div>
     </div>
     <div class="header-actions">
+      <button class="theme-toggle" id="btn-theme" title="切换主题" type="button" style="position:static;">
+        <svg class="ti-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="ti-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
       <span class="badge badge-pending" id="pending-count">待审核: --</span>
       <span class="badge badge-reviewed" id="reviewed-count">已审核: --</span>
     </div>
@@ -419,7 +408,7 @@ async function loadList() {
           <td>${item.date || '--'}</td>
           <td><strong>${item.total_score ?? '--'}</strong></td>
           <td>${item.grade || '--'}</td>
-          <td><span style="font-size:11px;color:var(--text-secondary);background:#f1f5f9;padding:2px 8px;border-radius:4px;">${scoringBadge}</span></td>
+          <td><span style="font-size:11px;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 8px;border-radius:4px;">${scoringBadge}</span></td>
           <td><span class="status-tag ${statusClass}">${statusText}</span></td>
           <td>${item.reviewer || '--'}</td>
         </tr>`;
@@ -555,7 +544,7 @@ function renderDetail(data) {
       const tagClass = lv === '高' ? 'tag-high' : lv === '中等' ? 'tag-medium' : 'tag-low';
       return `<div style="display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;">
         <span style="font-weight:600;white-space:nowrap;">${dim}</span>
-        <span style="font-size:12px;padding:1px 8px;border-radius:999px;background:${lv === '高' ? '#d1fae5' : lv === '中等' ? '#fef3c7' : '#fee2e2'};color:${lv === '高' ? '#065f46' : lv === '中等' ? '#92400e' : '#991b1b'};">${lv}</span>
+        <span style="font-size:12px;padding:1px 8px;border-radius:999px;background:${lv === '高' ? 'var(--lv-high-bg)' : lv === '中等' ? 'var(--lv-medium-bg)' : 'var(--lv-low-bg)'};color:${lv === '高' ? 'var(--lv-high-text)' : lv === '中等' ? 'var(--lv-medium-text)' : 'var(--lv-low-text)'};">${lv}</span>
         <span style="color:var(--text-secondary);">${suggestion}</span>
       </div>`;
     }).join('');
@@ -642,6 +631,37 @@ async function saveReview() {
     btn.textContent = '保存审核结果';
   }
 }
+
+// ── Theme System ──
+(function() {
+  var KEY = 'td-theme';
+  function getSaved() { return localStorage.getItem(KEY) || 'system'; }
+  function setTheme(t) {
+    if (t === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem(KEY, t);
+    var btn = document.getElementById('btn-theme');
+    if (!btn) return;
+    var sun = btn.querySelector('.ti-sun');
+    var moon = btn.querySelector('.ti-moon');
+    if (sun) sun.style.display = t === 'dark' ? 'none' : '';
+    if (moon) moon.style.display = t === 'dark' ? '' : 'none';
+    var names = { light: '浅色', dark: '深色', system: '跟随系统' };
+    btn.title = '当前: ' + (names[t] || t) + '，点击切换';
+  }
+  setTheme(getSaved());
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener('change', function() {
+    if (getSaved() === 'system') document.documentElement.removeAttribute('data-theme');
+  });
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#btn-theme');
+    if (!btn) return;
+    var themes = ['light', 'dark', 'system'];
+    var cur = getSaved();
+    setTheme(themes[(themes.indexOf(cur) + 1) % themes.length]);
+  });
+})();
 
 // Init
 loadList();
