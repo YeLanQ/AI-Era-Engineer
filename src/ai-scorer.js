@@ -123,13 +123,24 @@ function buildRubricText(dimName) {
 }
 
 function buildSystemPrompt() {
-  return '你是一位资深软件工程能力评估专家。你的任务是严格、公正地评估候选人的技术作答。\n\n'
+  const c = cfg();
+  const strictMode = c.ai_scoring?.strict_mode !== false;
+  let prompt = '你是一位资深软件工程能力评估专家。你的任务是严格、公正地评估候选人的技术作答。\n\n'
     + '评估原则：\n'
     + '1. 根据候选人答案的实际质量评分，而不是关键词匹配\n'
     + '2. 考虑答案的完整性、准确性、深度和工程实践水平\n'
     + '3. 结合AI协作日志评估人机协同能力\n'
     + '4. 对每个子项给出具体的评分理由\n\n'
-    + '每个子项必须严格按照评分标准给出分数（0到满分值），不允许超范围。';
+    + '每个子项必须严格按照评分标准给出分数（0到满分值），不允许超范围。\n\n';
+  if (strictMode) {
+    prompt += '【严格模式】\n'
+      + '如果候选人出现以下情况，所有关联维度的子项均给0分：\n'
+      + '- 未作答或答案为空\n'
+      + '- 回答"不知道"、"不会"、"没学过"、"不清楚"或类似含义\n'
+      + '- 回答与题目完全无关的内容\n'
+      + '- 敷衍了事或明显胡乱作答\n\n';
+  }
+  return prompt;
 }
 
 function buildUserPrompt(answers, level, domain, questions) {
@@ -354,6 +365,56 @@ function computeScores(aiScores, level) {
 
 export { getAvailableProviders };
 
+const IRRELEVANT_PATTERNS = [
+  /^\s*$/, /^\(未作答\)$/, /^暂无作答/, /^无回答/,
+  /^不知道/, /^不会/, /^没学过/, /^不清楚/, /^不了解/, /^不懂/,
+  /^I\s+don'?t\s+(know|understand)/i,
+  /^no\s+(idea|clue)/i,
+  /^(不会做|不会写|不会答|做不来|写不来)$/,
+  /^[。，、！？\s,.!?]{1,10}$/,
+];
+
+function isAnswerIrrelevant(answer) {
+  if (!answer) return true;
+  const trimmed = answer.trim();
+  if (!trimmed) return true;
+  if (trimmed.length <= 3) return true;
+  for (const p of IRRELEVANT_PATTERNS) {
+    if (p.test(trimmed)) return true;
+  }
+  return false;
+}
+
+function enforceStrictMode(rawScores, answers, questions) {
+  const c = cfg();
+  if (c.ai_scoring?.strict_mode === false) return rawScores;
+  if (!answers || !questions) return rawScores;
+
+  const qDimMap = {};
+  for (const q of questions) {
+    if (q.dimensions) qDimMap[q.id] = q.dimensions;
+  }
+
+  const hasIrrelevant = answers.some(a => isAnswerIrrelevant(a.answer));
+  if (!hasIrrelevant) return rawScores;
+
+  const scores = JSON.parse(JSON.stringify(rawScores));
+
+  for (const a of answers) {
+    if (!isAnswerIrrelevant(a.answer)) continue;
+    const dims = qDimMap[a.questionId];
+    if (!dims) continue;
+    for (const dk of dims) {
+      if (!scores[dk]) continue;
+      for (const key of Object.keys(scores[dk])) {
+        scores[dk][key] = { score: 0, reasoning: '【严格模式】未作答或回答与题目无关，0分' };
+      }
+    }
+  }
+
+  return scores;
+}
+
 export async function assessWithAI(answers, level, domain, questions) {
   const aiConfig = getAIConfig();
 
@@ -387,6 +448,7 @@ export async function assessWithAI(answers, level, domain, questions) {
     }
   }
 
+  rawScores = enforceStrictMode(rawScores, answers, questions);
   return computeScores(rawScores, level);
 }
 

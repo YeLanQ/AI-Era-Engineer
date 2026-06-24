@@ -181,6 +181,8 @@ ai_scoring:
   enabled: true
   temperature: 0.3
   max_tokens: 16384
+  # 严格模式：对于未作答、回答不知道等无关内容，直接打0分
+  strict_mode: true
 
 # 输出配置
 output:
