@@ -7,6 +7,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 
+const DIM_KEY_REV = { C: 'cognition', H: 'synergy', E: 'engineering' };
+const SUB_CN = {
+  cognition: { interview: '答辩专业度', requirement_understanding: '需求理解', problem_decomposition: '问题拆解' },
+  synergy: { requirement_decomposition: '需求拆解', debugging_correction: '调试纠偏', code_review: '代码审查', collaboration_efficiency: '协同效率', quality_control: '质量控制' },
+  engineering: { functionality: '功能完整性', code_quality: '代码质量', security: '安全性', performance: '性能', maintainability: '可维护性', compatibility: '兼容性' },
+};
+const DIM_CN = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+
 function loadTemplate() {
   return readFileSync(join(__dirname, 'template.html'), 'utf-8');
 }
@@ -37,17 +45,35 @@ function fillTemplate(template, data) {
 
   const feedback = data.feedback || {};
   const feedbackHtml = Object.entries(feedback).map(([dim, info]) => {
-    const level = info.level || '中等';
-    const tagClass = level === '高' ? 'tag-high' : level === '中等' ? 'tag-medium' : 'tag-low';
+    const lv = info.level || '中等';
+    const tagClass = lv === '高' ? 'tag-high' : lv === '中等' ? 'tag-medium' : 'tag-low';
     return `<div class="feedback-item">
       <div class="dimension-name">
         <span>${dim}</span>
-        <span class="level-tag ${tagClass}">${level}</span>
+        <span class="level-tag ${tagClass}">${lv}</span>
       </div>
       <div class="suggestion">${info.suggestion || ''}</div>
     </div>`;
   }).join('');
   html = html.replace(/\{\{feedback\}\}/g, feedbackHtml);
+
+  const subScores = result.sub_criterion_scores || {};
+  const subHtml = Object.entries(subScores).map(([dimKey, criteria]) => {
+    const dimName = DIM_CN[dimKey] || dimKey;
+    const subKey = DIM_KEY_REV[dimKey] || dimKey;
+    const labels = SUB_CN[subKey] || {};
+    const items = Object.entries(criteria).map(([ck, { score, max }]) => {
+      const label = labels[ck] || ck;
+      const pct = max > 0 ? (score / max) * 100 : 0;
+      return `<div class="sub-item">
+        <span class="sub-name">${label}</span>
+        <div class="sub-track"><div class="sub-fill" style="width:${pct}%"></div></div>
+        <span class="sub-value">${score}/${max}</span>
+      </div>`;
+    }).join('');
+    return `<div class="sub-dim"><h3>${dimName}</h3>${items}</div>`;
+  }).join('');
+  html = html.replace(/\{\{sub_criteria\}\}/g, subHtml);
 
   return html;
 }
@@ -59,6 +85,11 @@ const SAMPLE_DATA = {
   date: '2026-06-24',
   result: {
     dimension_scores: { C: 85, H: 70, E: 90 },
+    sub_criterion_scores: {
+      C: { interview: { score: 18, max: 20 }, requirement_understanding: { score: 4, max: 5 }, problem_decomposition: { score: 5, max: 5 } },
+      H: { requirement_decomposition: { score: 7, max: 10 }, debugging_correction: { score: 12, max: 15 }, code_review: { score: 10, max: 15 }, collaboration_efficiency: { score: 7, max: 10 }, quality_control: { score: 6, max: 10 } },
+      E: { functionality: { score: 18, max: 20 }, code_quality: { score: 12, max: 15 }, security: { score: 15, max: 15 }, performance: { score: 8, max: 10 }, maintainability: { score: 9, max: 10 }, compatibility: { score: 8, max: 10 } },
+    },
     total_score: 82.5,
     grade: '熟练级'
   },

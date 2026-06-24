@@ -201,6 +201,15 @@ async function handleAPI(req, res) {
   sendError(res, 404, 'Not Found');
 }
 
+const DIM_KEY_REV = { C: 'cognition', H: 'synergy', E: 'engineering' };
+const SUB_CN = {
+  cognition: { interview: '答辩专业度', requirement_understanding: '需求理解', problem_decomposition: '问题拆解' },
+  synergy: { requirement_decomposition: '需求拆解', debugging_correction: '调试纠偏', code_review: '代码审查', collaboration_efficiency: '协同效率', quality_control: '质量控制' },
+  engineering: { functionality: '功能完整性', code_quality: '代码质量', security: '安全性', performance: '性能', maintainability: '可维护性', compatibility: '兼容性' },
+};
+
+const DIM_CN = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+
 function fillReportTemplate(template, data) {
   const candidate = data.candidate || 'Unknown';
   const level = data.level || '';
@@ -238,6 +247,24 @@ function fillReportTemplate(template, data) {
     </div>`;
   }).join('');
   html = html.replace(/\{\{feedback\}\}/g, feedbackHtml);
+
+  const subScores = result.sub_criterion_scores || {};
+  const subHtml = Object.entries(subScores).map(([dimKey, criteria]) => {
+    const dimName = DIM_CN[dimKey] || dimKey;
+    const subKey = DIM_KEY_REV[dimKey] || dimKey;
+    const labels = SUB_CN[subKey] || {};
+    const items = Object.entries(criteria).map(([ck, { score, max }]) => {
+      const label = labels[ck] || ck;
+      const pct = max > 0 ? (score / max) * 100 : 0;
+      return `<div class="sub-item">
+        <span class="sub-name">${label}</span>
+        <div class="sub-track"><div class="sub-fill" style="width:${pct}%"></div></div>
+        <span class="sub-value">${score}/${max}</span>
+      </div>`;
+    }).join('');
+    return `<div class="sub-dim"><h3>${dimName}</h3>${items}</div>`;
+  }).join('');
+  html = html.replace(/\{\{sub_criteria\}\}/g, subHtml);
 
   return html;
 }
