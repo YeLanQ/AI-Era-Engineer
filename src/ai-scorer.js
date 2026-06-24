@@ -45,7 +45,10 @@ function generateFeedback(scores) {
     else feedback[name] = { level: '高', suggestion: `保持${name}优势，持续关注前沿技术发展` };
   }
   const avg = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length;
-  feedback['总体建议'] = avg >= 80 ? '综合能力优秀，建议向更高等级进阶' : '建议针对薄弱维度制定专项提升计划';
+  feedback['总体建议'] = {
+    level: avg >= 80 ? '高' : '中等',
+    suggestion: avg >= 80 ? '综合能力优秀，建议向更高等级进阶' : '建议针对薄弱维度制定专项提升计划'
+  };
   return feedback;
 }
 

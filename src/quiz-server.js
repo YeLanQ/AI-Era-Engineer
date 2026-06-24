@@ -435,7 +435,10 @@ function generateFeedback(scores) {
     else feedback[name] = { level: '高', suggestion: `保持${name}优势，持续关注前沿技术发展` };
   }
   const avg = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length;
-  feedback['总体建议'] = avg >= 80 ? '综合能力优秀，建议向更高等级进阶' : '建议针对薄弱维度制定专项提升计划';
+  feedback['总体建议'] = {
+    level: avg >= 80 ? '高' : '中等',
+    suggestion: avg >= 80 ? '综合能力优秀，建议向更高等级进阶' : '建议针对薄弱维度制定专项提升计划'
+  };
   return feedback;
 }
 
@@ -466,14 +469,21 @@ function fillReportTemplate(template, data) {
 
   const feedback = data.feedback || {};
   const feedbackHtml = Object.entries(feedback).map(([dim, info]) => {
-    const lv = info.level || '中等';
+    let lv, suggestion;
+    if (typeof info === 'string') {
+      lv = '中等';
+      suggestion = info;
+    } else {
+      lv = info.level || '中等';
+      suggestion = info.suggestion || '';
+    }
     const tagClass = lv === '高' ? 'tag-high' : lv === '中等' ? 'tag-medium' : 'tag-low';
     return `<div class="feedback-item">
       <div class="dimension-name">
         <span>${dim}</span>
         <span class="level-tag ${tagClass}">${lv}</span>
       </div>
-      <div class="suggestion">${info.suggestion || ''}</div>
+      <div class="suggestion">${suggestion}</div>
     </div>`;
   }).join('');
   html = html.replace(/\{\{feedback\}\}/g, feedbackHtml);

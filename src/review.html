@@ -273,6 +273,7 @@ tr.clickable { cursor: pointer; }
     <div>
       <h1>人工审核系统</h1>
       <div class="subtitle">Human Review — AI Scoring Quality Assurance</div>
+      <div style="margin-top:4px;"><a href="/" style="font-size:13px;color:var(--text-secondary);text-decoration:none;">← 返回主页</a></div>
     </div>
     <div class="header-actions">
       <span class="badge badge-pending" id="pending-count">待审核: --</span>
@@ -351,6 +352,11 @@ tr.clickable { cursor: pointer; }
       </div>
 
       <div id="scoring-container"></div>
+
+      <div id="feedback-container" style="display:none;">
+        <h2>评估反馈</h2>
+        <div id="feedback-content"></div>
+      </div>
 
       <div class="form-group mt-20">
         <label>审核意见</label>
@@ -529,6 +535,33 @@ function renderDetail(data) {
       ${criteriaHtml}
     </div>`;
   }).join('');
+
+  // Feedback
+  const fbContainer = document.getElementById('feedback-container');
+  const fbContent = document.getElementById('feedback-content');
+  const feedback = data.feedback || {};
+  const fbEntries = Object.entries(feedback);
+  if (fbEntries.length) {
+    fbContainer.style.display = 'block';
+    fbContent.innerHTML = fbEntries.map(([dim, info]) => {
+      let lv, suggestion;
+      if (typeof info === 'string') {
+        lv = '中等';
+        suggestion = info;
+      } else {
+        lv = info.level || '中等';
+        suggestion = info.suggestion || '';
+      }
+      const tagClass = lv === '高' ? 'tag-high' : lv === '中等' ? 'tag-medium' : 'tag-low';
+      return `<div style="display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;">
+        <span style="font-weight:600;white-space:nowrap;">${dim}</span>
+        <span style="font-size:12px;padding:1px 8px;border-radius:999px;background:${lv === '高' ? '#d1fae5' : lv === '中等' ? '#fef3c7' : '#fee2e2'};color:${lv === '高' ? '#065f46' : lv === '中等' ? '#92400e' : '#991b1b'};">${lv}</span>
+        <span style="color:var(--text-secondary);">${suggestion}</span>
+      </div>`;
+    }).join('');
+  } else {
+    fbContainer.style.display = 'none';
+  }
 
   // Comparison summary
   const compEl = document.getElementById('score-comparison');

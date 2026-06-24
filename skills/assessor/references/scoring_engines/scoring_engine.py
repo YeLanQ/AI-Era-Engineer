@@ -219,9 +219,9 @@ class ScoringEngine:
         # 总体建议
         avg_score = sum(scores.values()) / len(scores)
         if avg_score < 70:
-            feedback["总体建议"] = "建议参加强化培训"
+            feedback["总体建议"] = {"level": "低", "suggestion": "建议参加强化培训"}
         else:
-            feedback["总体建议"] = "建议向更高等级进阶"
+            feedback["总体建议"] = {"level": "高", "suggestion": "建议向更高等级进阶"}
         
         return feedback
 

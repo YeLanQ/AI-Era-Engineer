@@ -581,7 +581,7 @@ body {
 </div>
 
 <div style="text-align:center;padding:12px;font-size:12px;color:var(--text-secondary);">
-  <a href="/review.html" target="_blank" style="color:var(--primary);text-decoration:none;">人工审核系统</a>
+  <a href="/review.html" style="color:var(--primary);text-decoration:none;">人工审核系统</a>
 </div>
 
 <div class="modal-overlay" id="modal-config">
@@ -992,13 +992,21 @@ function renderResults(data) {
   // Feedback
   const feedbackList = document.getElementById('feedback-list');
   feedbackList.innerHTML = Object.entries(data.feedback).map(([dim, info]) => {
-    const lvClass = info.level === '高' ? 'lv-high' : info.level === '中等' ? 'lv-medium' : 'lv-low';
+    let lv, suggestion;
+    if (typeof info === 'string') {
+      lv = '中等';
+      suggestion = info;
+    } else {
+      lv = info.level || '中等';
+      suggestion = info.suggestion || '';
+    }
+    const lvClass = lv === '高' ? 'lv-high' : lv === '中等' ? 'lv-medium' : 'lv-low';
     return `<div class="feedback-item">
       <div class="fb-name">
         <span>${dim}</span>
-        <span class="fb-level ${lvClass}">${info.level}</span>
+        <span class="fb-level ${lvClass}">${lv}</span>
       </div>
-      <div class="fb-text">${info.suggestion}</div>
+      <div class="fb-text">${suggestion}</div>
     </div>`;
   }).join('');
 
