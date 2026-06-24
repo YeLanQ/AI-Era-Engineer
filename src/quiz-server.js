@@ -1,10 +1,11 @@
 import http from 'http';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname, extname } from 'path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
+import { join, dirname, extname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { loadSkillConfig } from './load-skill-config.js';
 import { loadQuestions, loadDomains } from './load-question-bank.js';
 import { assess, toRadarData } from './scorer.js';
+import { assessWithAI, getAvailableProviders } from './ai-scorer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -97,6 +98,28 @@ function handleStaticFile(req, res) {
   return true;
 }
 
+function listAssessments() {
+  ensureDir(DATA_DIR);
+  const files = readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
+  return files.map(f => {
+    try {
+      const data = JSON.parse(readFileSync(join(DATA_DIR, f), 'utf-8'));
+      return {
+        id: basename(f, '.json'),
+        candidate: data.candidate || 'Unknown',
+        level: data.level || '',
+        domain: data.domain || '',
+        date: data.date || '',
+        total_score: data.result?.total_score ?? null,
+        grade: data.result?.grade || '',
+        status: data.status || 'ai_scored',
+        reviewer: data.review?.reviewer || '',
+        scoring_method: data.scoring_method || 'rule',
+      };
+    } catch { return null; }
+  }).filter(Boolean);
+}
+
 async function handleAPI(req, res) {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const path = url.pathname;
@@ -112,6 +135,71 @@ async function handleAPI(req, res) {
       passingScore: config.assessment.rules.passing_score,
       dimensionDescriptions: DIMENSION_DESCRIPTIONS,
     });
+    return;
+  }
+
+  // GET /api/ai-config
+  if (path === '/api/ai-config' && req.method === 'GET') {
+    const apiKey = process.env.AI_API_KEY || '';
+    const anthropicKey = process.env.ANTHROPIC_API_KEY || '';
+    const provider = process.env.AI_PROVIDER || 'openai';
+    const providers = getAvailableProviders();
+    const currentProvider = providers.find(p => p.id === provider) || providers[0];
+    sendJSON(res, 200, {
+      enabled: !!(apiKey || anthropicKey),
+      provider,
+      model: process.env.AI_MODEL || currentProvider.defaultModel || 'gpt-4o-mini',
+      endpoint: process.env.AI_API_ENDPOINT || currentProvider.defaultEndpoint || 'https://api.openai.com/v1',
+      hasApiKey: !!(apiKey || anthropicKey),
+      anthropicKey: !!anthropicKey,
+      providers,
+    });
+    return;
+  }
+
+  // PUT /api/ai-config
+  if (path === '/api/ai-config' && req.method === 'PUT') {
+    try {
+      const body = await parseBody(req);
+      const envPath = join(__dirname, '..', '.env');
+      let envContent = '';
+      if (existsSync(envPath)) {
+        envContent = readFileSync(envPath, 'utf-8');
+      }
+
+      const updates = {
+        AI_API_KEY: body.apiKey,
+        AI_API_ENDPOINT: body.endpoint,
+        AI_MODEL: body.model,
+        AI_PROVIDER: body.provider,
+        ANTHROPIC_API_KEY: body.anthropicApiKey,
+      };
+
+      for (const [key, value] of Object.entries(updates)) {
+        const re = new RegExp(`^${key}=.*$`, 'm');
+        if (value) {
+          if (re.test(envContent)) {
+            envContent = envContent.replace(re, `${key}=${value}`);
+          } else {
+            envContent += `\n${key}=${value}`;
+          }
+          process.env[key] = value;
+        } else {
+          if (re.test(envContent)) {
+            envContent = envContent.replace(re, `# ${key}=`);
+          }
+        }
+      }
+
+      writeFileSync(envPath, envContent, 'utf-8');
+      sendJSON(res, 200, {
+        message: 'AI configuration updated',
+        provider: process.env.AI_PROVIDER || 'openai',
+        model: process.env.AI_MODEL || '',
+      });
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
     return;
   }
 
@@ -141,36 +229,53 @@ async function handleAPI(req, res) {
   if (path === '/api/assess' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
-      const { answers, level, candidate, domain } = body;
+      const { answers, level, candidate, domain, scoring_method } = body;
+      const provider = process.env.AI_PROVIDER || 'openai';
+      const hasKey = provider === 'anthropic' ? !!process.env.ANTHROPIC_API_KEY : !!process.env.AI_API_KEY;
+      const useAI = scoring_method === 'ai' && hasKey;
 
       if (!answers || !level) {
         sendError(res, 400, '缺少答案或等级信息');
         return;
       }
 
-      const result = assess(answers, level);
+      let result;
+      if (useAI) {
+        const questions = generateQuestions(level, domain || '电商');
+        result = await assessWithAI(answers, level, domain || '电商', questions);
+      } else {
+        result = assess(answers, level);
+      }
+
       const radarData = toRadarData(result.dimension_scores);
+
+      const questions = generateQuestions(level, domain || '电商');
 
       const reportData = {
         candidate: candidate || 'Unknown',
         level,
         domain: domain || '',
         date: new Date().toISOString().split('T')[0],
+        scoring_method: useAI ? 'ai' : 'rule',
+        status: 'ai_scored',
+        questions: questions.map(q => ({ id: q.id, title: q.title, description: q.description })),
+        answers,
         result,
         radar_data: radarData,
         feedback: result.feedback,
-        answers,
       };
 
       ensureDir(DATA_DIR);
       const jsonPath = join(DATA_DIR, `${reportData.candidate}_assessment.json`);
-      writeFileSync(jsonPath, JSON.stringify(reportData, null, 2), 'utf-8');
+      const existing = existsSync(jsonPath) ? JSON.parse(readFileSync(jsonPath, 'utf-8')) : {};
+      writeFileSync(jsonPath, JSON.stringify({ ...existing, ...reportData }, null, 2), 'utf-8');
 
       sendJSON(res, 200, {
         result,
         radarData,
         feedback: result.feedback,
         savedTo: jsonPath,
+        scoring_method: useAI ? 'ai' : 'rule',
       });
     } catch (e) {
       sendError(res, 500, e.message);
@@ -203,6 +308,89 @@ async function handleAPI(req, res) {
     return;
   }
 
+  // GET /api/assessments
+  if (path === '/api/assessments' && req.method === 'GET') {
+    const list = listAssessments();
+    sendJSON(res, 200, list);
+    return;
+  }
+
+  // GET /api/assessments/:id
+  const detailMatch = path.match(/^\/api\/assessments\/(.+?)$/);
+  if (detailMatch && req.method === 'GET') {
+    const id = detailMatch[1];
+    const filePath = join(DATA_DIR, `${id}.json`);
+    if (!existsSync(filePath)) {
+      sendError(res, 404, 'Assessment not found');
+      return;
+    }
+    try {
+      const data = JSON.parse(readFileSync(filePath, 'utf-8'));
+      sendJSON(res, 200, data);
+    } catch (e) {
+      sendError(res, 500, 'Failed to read assessment data');
+    }
+    return;
+  }
+
+  // PUT /api/assessments/:id/review
+  if (detailMatch && req.method === 'PUT' && path.endsWith('/review')) {
+    const id = detailMatch[1];
+    const filePath = join(DATA_DIR, `${id}.json`);
+    if (!existsSync(filePath)) {
+      sendError(res, 404, 'Assessment not found');
+      return;
+    }
+
+    try {
+      const body = await parseBody(req);
+      const data = JSON.parse(readFileSync(filePath, 'utf-8'));
+
+      const adjusted = body.adjusted_scores || {};
+      const dimKeys = ['C', 'H', 'E'];
+      const dimResults = {};
+      let totalAdjusted = 0;
+      let totalWeight = 0;
+      const w = getWeights(data.level);
+
+      for (const dk of dimKeys) {
+        const subs = adjusted[dk] || {};
+        let dimTotal = 0;
+        let dimMax = 0;
+        for (const [, v] of Object.entries(subs)) {
+          dimTotal += v.score || 0;
+          dimMax += v.max || 0;
+        }
+        const pct = dimMax > 0 ? Math.round((dimTotal / dimMax) * 100) : 0;
+        dimResults[dk] = pct;
+        totalAdjusted += pct * (w[dk] || 0);
+        totalWeight += w[dk] || 0;
+      }
+
+      const adjustedTotal = totalWeight > 0 ? Math.round((totalAdjusted / totalWeight) * 10) / 10 : 0;
+      const adjustedGrade = mapToGrade(adjustedTotal);
+      const adjustedFeedback = generateFeedback(dimResults);
+
+      data.review = {
+        reviewer: body.reviewer || '审核员',
+        comments: body.comments || '',
+        adjusted_scores: adjusted,
+        reviewed_at: new Date().toISOString(),
+        dimension_scores: dimResults,
+        total_score: adjustedTotal,
+        grade: adjustedGrade,
+        feedback: adjustedFeedback,
+      };
+      data.status = 'reviewed';
+
+      writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      sendJSON(res, 200, { message: 'Review saved', status: 'reviewed' });
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
   sendError(res, 404, 'Not Found');
 }
 
@@ -214,6 +402,41 @@ const SUB_CN = {
 };
 
 const DIM_CN = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+
+function getWeights(level) {
+  const DIM_KEY = { Cognition: 'C', Synergy: 'H', Engineering: 'E' };
+  const config = getConfig();
+  const w = {};
+  for (const dim of config.assessment.dimensions) {
+    const k = DIM_KEY[dim.name];
+    if (!k) continue;
+    w[k] = dim.weight_range?.[level] ?? dim.weight_range?.L1 ?? 0;
+  }
+  return w;
+}
+
+function mapToGrade(total) {
+  const pass = getConfig().assessment.rules.passing_score || 75;
+  if (total >= pass + 15) return '专家级';
+  if (total >= pass + 5) return '熟练级';
+  if (total >= pass) return '合格级';
+  if (total >= pass - 10) return '基础级';
+  return '待提升';
+}
+
+function generateFeedback(scores) {
+  const dimNames = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+  const feedback = {};
+  for (const [k, s] of Object.entries(scores)) {
+    const name = dimNames[k] || k;
+    if (s < 60) feedback[name] = { level: '低', suggestion: `建议加强${name}训练，系统学习相关理论并多实践` };
+    else if (s < 80) feedback[name] = { level: '中等', suggestion: `建议提高${name}能力，通过项目实战积累经验` };
+    else feedback[name] = { level: '高', suggestion: `保持${name}优势，持续关注前沿技术发展` };
+  }
+  const avg = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length;
+  feedback['总体建议'] = avg >= 80 ? '综合能力优秀，建议向更高等级进阶' : '建议针对薄弱维度制定专项提升计划';
+  return feedback;
+}
 
 function fillReportTemplate(template, data) {
   const candidate = data.candidate || 'Unknown';
@@ -297,6 +520,8 @@ function main() {
     console.log(`\n  🌐 AI时代工程师能力评估 - Web答题系统`);
     console.log(`  ─────────────────────────────────────`);
     console.log(`  地址: http://localhost:${PORT}`);
+    console.log(`  答题: http://localhost:${PORT}/`);
+    console.log(`  审核: http://localhost:${PORT}/review.html`);
     console.log(`  按 Ctrl+C 停止服务器\n`);
   });
 }

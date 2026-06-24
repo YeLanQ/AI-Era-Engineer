@@ -315,13 +315,61 @@ body {
   background: #fff;
   border-radius: var(--radius);
   padding: 32px;
-  max-width: 440px;
+  max-width: 520px;
   width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: var(--shadow-lg);
   text-align: center;
 }
 .modal h3 { font-size: 20px; margin-bottom: 8px; }
 .modal p { color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; }
+.modal .form-group { text-align: left; }
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background .2s;
+}
+.btn-icon:hover { background: rgba(255,255,255,.25); }
+
+.config-field { margin-bottom: 16px; }
+.config-field label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--text); }
+.config-field input, .config-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .2s;
+  background: #fff;
+}
+.config-field input:focus, .config-field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+.config-field .field-hint { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.config-field .model-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.config-field .model-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all .2s;
+}
+.config-field .model-tag:hover { border-color: var(--primary); color: var(--primary); }
+.config-success { color: var(--success); font-size: 13px; margin-top: 8px; }
+.config-error { color: var(--danger); font-size: 13px; margin-top: 8px; }
 
 .answers-review { margin-top: 20px; }
 .answers-review details {
@@ -348,17 +396,19 @@ body {
 <body>
 
 <div class="container">
-  <div class="header">
+  <div class="header" style="position:relative;">
     <h1>AI时代工程师能力评估</h1>
     <div class="subtitle">在线答题系统 &mdash; AI-Era Engineer Capability Assessment</div>
+    <button class="btn-icon" id="btn-settings" style="position:absolute;top:16px;right:16px;" title="AI 接口配置">⚙</button>
   </div>
 
   <div class="steps" id="steps">
     <div class="step active" data-step="0">1. 基本信息</div>
     <div class="step" data-step="1">2. 选择等级</div>
     <div class="step" data-step="2">3. 选择领域</div>
-    <div class="step" data-step="3">4. 答题</div>
-    <div class="step" data-step="4">5. 评估结果</div>
+    <div class="step" data-step="3">4. 评分方式</div>
+    <div class="step" data-step="4">5. 答题</div>
+    <div class="step" data-step="5">6. 评估结果</div>
   </div>
 
   <!-- Screen 0: Name Input -->
@@ -398,6 +448,30 @@ body {
       </p>
       <div class="options-grid" id="domain-options"></div>
       <button class="btn btn-primary btn-block mt-20" id="btn-domain-start">开始答题</button>
+    </div>
+  </div>
+
+  <!-- Screen 2.5: Scoring Method -->
+  <div class="screen" id="screen-scoring">
+    <div class="card">
+      <h2>选择评分方式</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+        选择使用规则评分或 AI 智能评分
+      </p>
+      <div class="options-grid" id="scoring-options">
+        <button class="option-btn selected" data-value="rule">
+          <div class="opt-title">规则评分</div>
+          <div class="opt-desc">基于关键词匹配的本地快速评分，无需网络</div>
+        </button>
+        <button class="option-btn" data-value="ai" id="btn-scoring-ai">
+          <div class="opt-title">AI 智能评分</div>
+          <div class="opt-desc">基于大模型深度分析作答内容，更准确的评估</div>
+        </button>
+      </div>
+      <div id="ai-config-status" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;background:#fef3c7;font-size:13px;color:#92400e;">
+        AI 评分功能未配置，请设置 AI_API_KEY
+      </div>
+      <button class="btn btn-primary btn-block mt-20" id="btn-scoring-start">开始答题</button>
     </div>
   </div>
 
@@ -478,9 +552,55 @@ body {
       <h2>作答回顾</h2>
     </div>
 
+    <div class="card" id="ai-reasoning-card" style="display:none;">
+      <h2>AI 评分明细</h2>
+      <div id="ai-reasoning-content"></div>
+    </div>
+
     <div class="btn-group" style="justify-content:center;margin-top:8px;">
       <button class="btn btn-primary" id="btn-download-report">下载完整报告</button>
       <button class="btn btn-secondary" id="btn-restart">重新评估</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:12px;font-size:12px;color:var(--text-secondary);">
+  <a href="/review.html" target="_blank" style="color:var(--primary);text-decoration:none;">人工审核系统</a>
+</div>
+
+<div class="modal-overlay" id="modal-config">
+  <div class="modal">
+    <h3>AI 接口配置</h3>
+    <p style="margin-bottom:20px;">选择 AI 评分时使用的模型，支持本地和云端模型</p>
+    <div class="config-field">
+      <label>AI 提供商</label>
+      <select id="cfg-provider"></select>
+    </div>
+    <div class="config-field">
+      <label>API 端点</label>
+      <input type="text" id="cfg-endpoint" placeholder="https://api.openai.com/v1" />
+      <div class="field-hint" id="cfg-endpoint-hint">OpenAI 兼容接口的 API 地址</div>
+    </div>
+    <div class="config-field">
+      <label>模型名称</label>
+      <input type="text" id="cfg-model" placeholder="gpt-4o-mini" />
+      <div class="field-hint">常见模型见下方快捷选择</div>
+      <div class="model-tags" id="cfg-model-tags"></div>
+    </div>
+    <div class="config-field">
+      <label>API Key（AI评分必填）</label>
+      <input type="password" id="cfg-apikey" placeholder="sk-..." />
+      <div class="field-hint" id="cfg-apikey-hint">未设置时使用规则评分</div>
+    </div>
+    <div class="config-field" id="cfg-anthropic-field" style="display:none;">
+      <label>Anthropic API Key</label>
+      <input type="password" id="cfg-anthropic-apikey" placeholder="sk-ant-..." />
+      <div class="field-hint">选择 Anthropic 时需要额外配置</div>
+    </div>
+    <div id="cfg-status"></div>
+    <div class="btn-group" style="justify-content:center;margin-top:16px;">
+      <button class="btn btn-secondary" id="btn-config-close">取消</button>
+      <button class="btn btn-primary" id="btn-config-save">保存配置</button>
     </div>
   </div>
 </div>
@@ -498,12 +618,19 @@ let state = {
   name: '',
   level: null,
   domain: null,
+  scoringMethod: 'rule',
   questions: [],
   answers: [],
   currentIndex: 0,
   result: null,
+  scoringInfo: null,
   radarChart: null,
 };
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 async function api(url, opts = {}) {
   const res = await fetch(url, {
@@ -598,6 +725,43 @@ async function loadDomains() {
 domainStart.addEventListener('click', async () => {
   if (!state.domain) return alert('请选择业务领域');
   updateSteps(3);
+  showScreen('screen-scoring');
+  checkAIConfig();
+});
+
+// Scoring Method
+const scoringOptions = document.getElementById('scoring-options');
+const btnScoringStart = document.getElementById('btn-scoring-start');
+const aiConfigStatus = document.getElementById('ai-config-status');
+
+async function checkAIConfig() {
+  try {
+    const cfg = await api('/api/ai-config');
+    const aiBtn = document.getElementById('btn-scoring-ai');
+    const providerName = (cfg.providers || []).find(p => p.id === cfg.provider)?.name || cfg.provider;
+    if (cfg.hasApiKey) {
+      aiBtn.querySelector('.opt-desc').textContent = `[${providerName}] ${cfg.model} | ${cfg.endpoint}`;
+      aiConfigStatus.style.display = 'none';
+    } else {
+      aiBtn.querySelector('.opt-desc').textContent = '基于大模型深度分析作答内容，更准确的评估';
+      aiConfigStatus.style.display = 'block';
+    }
+  } catch {
+    aiConfigStatus.style.display = 'block';
+  }
+}
+
+scoringOptions.addEventListener('click', (e) => {
+  const btn = e.target.closest('.option-btn');
+  if (!btn) return;
+  scoringOptions.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.scoringMethod = btn.dataset.value;
+});
+
+btnScoringStart.addEventListener('click', async () => {
+  if (!state.scoringMethod) state.scoringMethod = 'rule';
+  updateSteps(4);
   showScreen('screen-quiz');
 
   const data = await api(`/api/questions?level=${state.level}&domain=${encodeURIComponent(state.domain)}`);
@@ -704,20 +868,22 @@ btnSubmit.addEventListener('click', async () => {
   document.getElementById('modal-loading').classList.add('show');
 
   try {
-    const data = await api('/api/assess', {
-      method: 'POST',
-      body: JSON.stringify({
-        answers: state.answers,
-        level: state.level,
-        candidate: state.name,
-        domain: state.domain,
-      }),
-    });
+      const data = await api('/api/assess', {
+        method: 'POST',
+        body: JSON.stringify({
+          answers: state.answers,
+          level: state.level,
+          candidate: state.name,
+          domain: state.domain,
+          scoring_method: state.scoringMethod,
+        }),
+      });
 
-    state.result = data;
-    updateSteps(4);
-    showScreen('screen-results');
-    renderResults(data);
+      state.result = data;
+      state.scoringInfo = data.scoring_method;
+      updateSteps(5);
+      showScreen('screen-results');
+      renderResults(data);
   } catch (e) {
     alert('评分失败: ' + e.message);
   } finally {
@@ -731,8 +897,9 @@ function renderResults(data) {
   const dimKeys = ['C', 'H', 'E'];
   const scores = data.result.dimension_scores;
 
+  const scoringLabel = state.scoringInfo === 'ai' ? 'AI智能评分' : '规则评分';
   document.getElementById('result-info').textContent =
-    `${state.name} | ${state.level} | ${state.domain} | ${data.result.grade}`;
+    `${state.name} | ${state.level} | ${state.domain} | ${data.result.grade} | ${scoringLabel}`;
 
   const cards = document.getElementById('score-cards');
   cards.innerHTML = dimKeys.map(key => `
@@ -809,6 +976,42 @@ function renderResults(data) {
     </div>`;
   }).join('');
 
+  // AI reasoning (when AI scoring was used)
+  const reasoningCard = document.getElementById('ai-reasoning-card');
+  const reasoningContent = document.getElementById('ai-reasoning-content');
+  const aiReasoning = data.result.ai_reasoning;
+
+  if (state.scoringInfo === 'ai' && aiReasoning) {
+    reasoningCard.style.display = 'block';
+    const dimNames = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+    const subCN = {
+      C: { interview: '答辩专业度', requirement_understanding: '需求理解', problem_decomposition: '问题拆解' },
+      H: { requirement_decomposition: '需求拆解', debugging_correction: '调试纠偏', code_review: '代码审查', collaboration_efficiency: '协同效率', quality_control: '质量控制' },
+      E: { functionality: '功能完整性', code_quality: '代码质量', security: '安全性', performance: '性能', maintainability: '可维护性', compatibility: '兼容性' },
+    };
+
+    reasoningContent.innerHTML = Object.entries(aiReasoning).map(([dk, criteria]) => {
+      const dimName = dimNames[dk] || dk;
+      const items = Object.entries(criteria).map(([ck, v]) => {
+        const label = (subCN[dk] && subCN[dk][ck]) || ck;
+        const pct = v.max > 0 ? Math.round((v.score / v.max) * 100) : 0;
+        return `<details style="margin-bottom:8px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+          <summary style="font-weight:600;cursor:pointer;">
+            ${label}: <span style="color:var(--primary)">${v.score}/${v.max}</span>
+            <span style="color:${pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)'}">(${pct}%)</span>
+          </summary>
+          <div style="margin-top:8px;color:var(--text-secondary);white-space:pre-wrap;">${escHtml(v.reasoning || '无评分理由')}</div>
+        </details>`;
+      }).join('');
+      return `<div style="margin-bottom:16px;">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--primary);">${dimName}</h3>
+        ${items}
+      </div>`;
+    }).join('');
+  } else {
+    reasoningCard.style.display = 'none';
+  }
+
   // Answers review
   const review = document.getElementById('answers-review');
   review.innerHTML = '<h2>作答回顾</h2>';
@@ -863,18 +1066,143 @@ document.getElementById('btn-restart').addEventListener('click', () => {
     name: '',
     level: null,
     domain: null,
+    scoringMethod: 'rule',
     questions: [],
     answers: [],
     currentIndex: 0,
     result: null,
+    scoringInfo: null,
     radarChart: null,
   };
   nameInput.value = '';
   nameNext.disabled = true;
   levelNext.disabled = true;
   levelContainer.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#scoring-options .option-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('#scoring-options .option-btn[data-value="rule"]').classList.add('selected');
   updateSteps(0);
   showScreen('screen-name');
+});
+
+// ── AI Config Modal ──
+const btnSettings = document.getElementById('btn-settings');
+const modalConfig = document.getElementById('modal-config');
+const cfgProvider = document.getElementById('cfg-provider');
+const cfgEndpoint = document.getElementById('cfg-endpoint');
+const cfgEndpointHint = document.getElementById('cfg-endpoint-hint');
+const cfgModel = document.getElementById('cfg-model');
+const cfgModelTags = document.getElementById('cfg-model-tags');
+const cfgApiKey = document.getElementById('cfg-apikey');
+const cfgApiKeyHint = document.getElementById('cfg-apikey-hint');
+const cfgAnthropicField = document.getElementById('cfg-anthropic-field');
+const cfgAnthropicKey = document.getElementById('cfg-anthropic-apikey');
+const cfgStatus = document.getElementById('cfg-status');
+
+let availableProviders = [];
+let currentProviderId = 'openai';
+
+function showConfigModal() { modalConfig.classList.add('show'); }
+function hideConfigModal() { modalConfig.classList.remove('show'); }
+
+btnSettings.addEventListener('click', showConfigModal);
+document.getElementById('btn-config-close').addEventListener('click', hideConfigModal);
+modalConfig.addEventListener('click', (e) => { if (e.target === modalConfig) hideConfigModal(); });
+
+async function loadConfig() {
+  const cfg = await api('/api/ai-config');
+  availableProviders = cfg.providers || [];
+  currentProviderId = cfg.provider || 'openai';
+
+  cfgProvider.innerHTML = availableProviders.map(p =>
+    `<option value="${p.id}" ${p.id === currentProviderId ? 'selected' : ''}>${p.name}</option>`
+  ).join('');
+
+  cfgEndpoint.value = cfg.endpoint || '';
+  cfgModel.value = cfg.model || '';
+  cfgApiKey.value = '';
+  cfgAnthropicKey.value = '';
+
+  updateProviderUI(currentProviderId);
+}
+loadConfig();
+
+cfgProvider.addEventListener('change', () => {
+  updateProviderUI(cfgProvider.value);
+});
+
+function updateProviderUI(providerId) {
+  currentProviderId = providerId;
+  const provider = availableProviders.find(p => p.id === providerId);
+
+  if (provider) {
+    cfgEndpoint.placeholder = provider.defaultEndpoint || 'https://...';
+    if (!cfgEndpoint.value || cfgEndpoint.value === '') {
+      cfgEndpoint.value = provider.defaultEndpoint || '';
+    }
+    cfgModel.placeholder = provider.defaultModel || 'model-name';
+  }
+
+  // Provider-specific hints and UI
+  if (providerId === 'ollama') {
+    cfgEndpointHint.textContent = 'Ollama 本地服务地址（默认 http://localhost:11434/v1）';
+    cfgApiKey.placeholder = '（本地模型无需 API Key）';
+    cfgApiKeyHint.textContent = 'Ollama 本地模型可留空';
+  } else if (providerId === 'anthropic') {
+    cfgEndpointHint.textContent = 'Anthropic API 地址';
+    cfgApiKey.placeholder = 'sk-ant-...';
+    cfgApiKeyHint.textContent = '使用 Anthropic API Key';
+  } else if (providerId === 'vllm') {
+    cfgEndpointHint.textContent = 'vLLM 本地服务地址';
+    cfgApiKey.placeholder = 'sk-...（如有需要）';
+    cfgApiKeyHint.textContent = 'vLLM 本地部署可留空';
+  } else {
+    cfgEndpointHint.textContent = 'OpenAI 兼容接口的 API 地址';
+    cfgApiKey.placeholder = 'sk-...';
+    cfgApiKeyHint.textContent = '未设置时使用规则评分';
+  }
+
+  const isAnthropic = providerId === 'anthropic';
+  cfgAnthropicField.style.display = isAnthropic ? 'block' : 'none';
+
+  // Model suggestions
+  if (provider && provider.models && provider.models.length > 0) {
+    cfgModelTags.innerHTML = provider.models.map(m =>
+      `<span class="model-tag" data-model="${m}">${m}</span>`
+    ).join('');
+    cfgModelTags.querySelectorAll('.model-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        cfgModel.value = tag.dataset.model;
+      });
+    });
+  } else {
+    cfgModelTags.innerHTML = '';
+  }
+
+  cfgStatus.innerHTML = '';
+}
+
+document.getElementById('btn-config-save').addEventListener('click', async () => {
+  cfgStatus.innerHTML = '<span class="loading"></span> 保存中...';
+  try {
+    const body = {
+      provider: cfgProvider.value,
+      endpoint: cfgEndpoint.value.trim(),
+      model: cfgModel.value.trim(),
+      apiKey: cfgApiKey.value.trim(),
+      anthropicApiKey: cfgAnthropicKey.value.trim() || undefined,
+    };
+
+    const result = await api('/api/ai-config', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    cfgStatus.innerHTML = `<span class="config-success">✓ 配置已保存（${result.provider} / ${result.model}）</span>`;
+    checkAIConfig();
+    setTimeout(hideConfigModal, 1200);
+  } catch (e) {
+    cfgStatus.innerHTML = `<span class="config-error">✗ 保存失败: ${e.message}</span>`;
+  }
 });
 
 // Init
