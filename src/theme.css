@@ -175,6 +175,7 @@
 
 /* Explicit light override */
 [data-theme="light"] {
+  color-scheme: light;
   --bg: #f0f2f5;
   --card: #ffffff;
   --primary: #4f46e5;
@@ -229,6 +230,13 @@
   --loading-track: rgba(79,70,229,.2);
   --q-answer-bg: #f0fdf4;
   --q-ailog-bg: #fffbeb;
+}
+
+/* ===== Color Scheme for native form controls ===== */
+html { color-scheme: light; }
+[data-theme="dark"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) { color-scheme: dark; }
 }
 
 /* ===== Theme Toggle Button ===== */
