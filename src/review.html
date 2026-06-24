@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人工审核 - AI时代工程师能力评估</title>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #eef2ff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,.07), 0 10px 15px rgba(0,0,0,.1);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+.header {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header h1 { font-size: 20px; font-weight: 700; }
+.header .subtitle { font-size: 13px; opacity: .85; }
+.header-actions { display: flex; gap: 8px; }
+.header-actions .badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-reviewed { background: #d1fae5; color: #065f46; }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-secondary { background: #f1f5f9; color: var(--text); }
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-block { width: 100%; }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+tr:hover td { background: #f8fafc; }
+tr.clickable { cursor: pointer; }
+.status-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.status-ai_scored { background: #fef3c7; color: #92400e; }
+.status-reviewed { background: #d1fae5; color: #065f46; }
+.status-completed { background: #e0e7ff; color: #3730a3; }
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.info-item { }
+.info-item .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
+.info-item .value { font-size: 18px; font-weight: 700; color: var(--text); }
+
+.question-block {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.question-block .q-title { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.question-block .q-desc {
+  font-size: 13px; color: var(--text-secondary);
+  background: #f8fafc; padding: 10px; border-radius: 6px;
+  margin-bottom: 12px; white-space: pre-wrap;
+}
+.question-block .q-answer {
+  font-size: 13px;
+  background: #f0fdf4; padding: 10px; border-radius: 6px;
+  margin-bottom: 8px; white-space: pre-wrap;
+}
+.question-block .q-ailog {
+  font-size: 13px;
+  background: #fffbeb; padding: 10px; border-radius: 6px;
+  white-space: pre-wrap;
+}
+.question-block .label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+
+.dim-section { margin-bottom: 20px; }
+.dim-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: var(--primary-light);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  color: var(--primary);
+}
+
+.criterion-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr 80px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+.criterion-row .name { font-weight: 500; }
+.criterion-row .ai-score {
+  text-align: center;
+  font-weight: 600;
+  color: var(--primary);
+}
+.criterion-row .reasoning { font-size: 12px; color: var(--text-secondary); }
+.criterion-row .reasoning summary { cursor: pointer; color: var(--text-secondary); }
+.criterion-row .reasoning .text { margin-top: 4px; padding: 6px; background: #f8fafc; border-radius: 4px; font-size: 12px; }
+.criterion-row input[type="number"] {
+  width: 70px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+.criterion-row input[type="number"]:focus { outline: none; border-color: var(--primary); }
+.criterion-row .max { color: var(--text-secondary); font-size: 12px; }
+
+.dim-total {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  border-top: 2px solid var(--border);
+  margin-top: 8px;
+}
+.dim-total .ai-total { color: var(--primary); }
+.dim-total .human-total { color: var(--success); }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.form-group textarea, .form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.form-group textarea:focus, .form-group input:focus { outline: none; border-color: var(--primary); }
+.form-group textarea { min-height: 60px; resize: vertical; }
+
+.score-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.score-summary .item {
+  text-align: center;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+.score-summary .item .dim { font-size: 11px; color: var(--text-secondary); }
+.score-summary .item .val { font-size: 28px; font-weight: 700; }
+.score-summary .item .val.ai { color: var(--primary); }
+.score-summary .item .val.human { color: var(--success); }
+.score-summary .item .val.diff { font-size: 16px; }
+
+.no-data { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+.no-data h3 { font-size: 18px; margin-bottom: 8px; }
+.no-data p { font-size: 14px; }
+
+.flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.mb-16 { margin-bottom: 16px; }
+.hidden { display: none !important; }
+
+.loading {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(79,70,229,.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.toast.show { opacity: 1; }
+.toast-success { background: var(--success); }
+.toast-error { background: var(--danger); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>人工审核系统</h1>
+      <div class="subtitle">Human Review — AI Scoring Quality Assurance</div>
+    </div>
+    <div class="header-actions">
+      <span class="badge badge-pending" id="pending-count">待审核: --</span>
+      <span class="badge badge-reviewed" id="reviewed-count">已审核: --</span>
+    </div>
+  </div>
+
+  <!-- Screen: Assessment List -->
+  <div class="screen active" id="screen-list">
+    <div class="card">
+      <div class="flex-between mb-16">
+        <h2 style="border:none;margin:0;padding:0;">评估列表</h2>
+        <button class="btn btn-secondary btn-sm" onclick="loadList()">刷新</button>
+      </div>
+      <div class="table-wrap" id="list-container">
+        <table>
+          <thead>
+            <tr>
+              <th>候选人</th>
+              <th>等级</th>
+              <th>领域</th>
+              <th>日期</th>
+              <th>总分</th>
+              <th>等级评定</th>
+              <th>评分方式</th>
+              <th>状态</th>
+              <th>审核人</th>
+            </tr>
+          </thead>
+          <tbody id="list-body">
+            <tr><td colspan="8" class="no-data" style="padding:40px;">加载中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen: Assessment Detail -->
+  <div class="screen" id="screen-detail">
+    <div>
+      <button class="btn btn-secondary btn-sm mb-16" onclick="showList()">← 返回列表</button>
+    </div>
+
+    <div class="card">
+      <h2>候选人信息</h2>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">姓名</div><div class="value" id="detail-name">--</div></div>
+        <div class="info-item"><div class="label">等级</div><div class="value" id="detail-level">--</div></div>
+        <div class="info-item"><div class="label">领域</div><div class="value" id="detail-domain">--</div></div>
+        <div class="info-item"><div class="label">日期</div><div class="value" id="detail-date">--</div></div>
+        <div class="info-item"><div class="label">状态</div><div class="value" id="detail-status">--</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>作答内容</h2>
+      <div id="questions-container"></div>
+    </div>
+
+    <div class="card">
+      <h2>AI 评分与人工审核</h2>
+
+      <div id="score-comparison" class="score-summary mb-16" style="display:none;">
+        <div class="item">
+          <div class="dim">AI 评分方法</div>
+          <div class="val" id="compare-scoring-method">--</div>
+        </div>
+        <div class="item">
+          <div class="dim">AI 总分</div>
+          <div class="val ai" id="compare-ai-total">--</div>
+        </div>
+        <div class="item">
+          <div class="dim">审核总分</div>
+          <div class="val human" id="compare-human-total">--</div>
+        </div>
+      </div>
+
+      <div id="scoring-container"></div>
+
+      <div class="form-group mt-20">
+        <label>审核意见</label>
+        <textarea id="review-comments" placeholder="请输入审核意见、修正理由等..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>审核人</label>
+        <input type="text" id="reviewer-name" placeholder="请输入审核人姓名" value="审核员" />
+      </div>
+
+      <div class="flex-between mt-16">
+        <button class="btn btn-secondary" onclick="showList()">取消</button>
+        <button class="btn btn-success" id="btn-save-review" onclick="saveReview()">保存审核结果</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentData = null;
+let currentId = null;
+
+async function api(url, opts) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast toast-' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadList() {
+  document.getElementById('list-body').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">加载中...</td></tr>';
+  try {
+    const list = await api('/api/assessments');
+    const tbody = document.getElementById('list-body');
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data" style="padding:40px;">暂无评估记录</td></tr>';
+    } else {
+      tbody.innerHTML = list.map(item => {
+        const statusClass = 'status-' + (item.status || 'ai_scored');
+        const statusText = item.status === 'reviewed' ? '已审核' : item.status === 'ai_scored' ? '待审核' : '已完成';
+        const scoringBadge = item.scoring_method === 'ai' ? 'AI' : '规则';
+        return `<tr class="clickable" onclick="openDetail('${item.id}')">
+          <td><strong>${item.candidate}</strong></td>
+          <td>${item.level}</td>
+          <td>${item.domain || '--'}</td>
+          <td>${item.date || '--'}</td>
+          <td><strong>${item.total_score ?? '--'}</strong></td>
+          <td>${item.grade || '--'}</td>
+          <td><span style="font-size:11px;color:var(--text-secondary);background:#f1f5f9;padding:2px 8px;border-radius:4px;">${scoringBadge}</span></td>
+          <td><span class="status-tag ${statusClass}">${statusText}</span></td>
+          <td>${item.reviewer || '--'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    const pending = list.filter(i => i.status === 'ai_scored').length;
+    const reviewed = list.filter(i => i.status === 'reviewed').length;
+    document.getElementById('pending-count').textContent = '待审核: ' + pending;
+    document.getElementById('reviewed-count').textContent = '已审核: ' + reviewed;
+  } catch (e) {
+    document.getElementById('list-body').innerHTML = `<tr><td colspan="9" class="no-data" style="padding:40px;">加载失败: ${e.message}</td></tr>`;
+  }
+}
+
+function showList() {
+  document.getElementById('screen-list').classList.add('active');
+  document.getElementById('screen-detail').classList.remove('active');
+  loadList();
+}
+
+async function openDetail(id) {
+  currentId = id;
+  document.getElementById('screen-list').classList.remove('active');
+  document.getElementById('screen-detail').classList.add('active');
+
+  try {
+    const data = await api('/api/assessments/' + id);
+    currentData = data;
+    renderDetail(data);
+  } catch (e) {
+    showToast('加载失败: ' + e.message, 'error');
+    showList();
+  }
+}
+
+const DIM_NAMES = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+const SUB_CN = {
+  C: { interview: '答辩专业度', requirement_understanding: '需求理解', problem_decomposition: '问题拆解' },
+  H: { requirement_decomposition: '需求拆解', debugging_correction: '调试纠偏', code_review: '代码审查', collaboration_efficiency: '协同效率', quality_control: '质量控制' },
+  E: { functionality: '功能完整性', code_quality: '代码质量', security: '安全性', performance: '性能', maintainability: '可维护性', compatibility: '兼容性' },
+};
+
+function renderDetail(data) {
+  document.getElementById('detail-name').textContent = data.candidate;
+  document.getElementById('detail-level').textContent = data.level;
+  document.getElementById('detail-domain').textContent = data.domain || '--';
+  document.getElementById('detail-date').textContent = data.date;
+  const scoringLabel = data.scoring_method === 'ai' ? 'AI评分' : '规则评分';
+  const statusLabel = data.status === 'reviewed' ? `已审核 (${scoringLabel})` : `待审核 (${scoringLabel})`;
+  document.getElementById('detail-status').textContent = statusLabel;
+
+  // Questions
+  const qContainer = document.getElementById('questions-container');
+  const questions = data.questions || [];
+  const answers = data.answers || [];
+  const qMap = {};
+  questions.forEach(q => qMap[q.id] = q);
+
+  qContainer.innerHTML = answers.map((a, i) => {
+    const q = qMap[a.questionId];
+    return `<div class="question-block">
+      <div class="q-title">${i + 1}. ${q ? q.title : a.questionId}</div>
+      ${q ? `<div class="label">题目描述</div><div class="q-desc">${escHtml(q.description)}</div>` : ''}
+      <div class="label">候选人作答</div>
+      <div class="q-answer">${escHtml(a.answer || '(未作答)')}</div>
+      ${a.aiLog ? `<div class="label" style="margin-top:8px;">AI协作日志</div>
+        <div class="q-ailog">${escHtml(a.aiLog)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Scoring
+  const sContainer = document.getElementById('scoring-container');
+  const reasoning = data.result?.ai_reasoning || {};
+  const subScores = data.result?.sub_criterion_scores || {};
+
+  let aiGlobalTotal = 0;
+  let aiGlobalMax = 0;
+
+  sContainer.innerHTML = Object.entries(DIM_NAMES).map(([dk, dimName]) => {
+    const subs = subScores[dk] || {};
+    const reason = reasoning[dk] || {};
+
+    const criteriaHtml = Object.entries(subs).map(([ck, { score, max }]) => {
+      const label = (SUB_CN[dk] && SUB_CN[dk][ck]) || ck;
+      const aiReason = reason[ck];
+      const pct = max > 0 ? Math.round((score / max) * 100) : 0;
+      const reasoningHtml = aiReason?.reasoning
+        ? `<details class="reasoning"><summary>AI 评分理由 <span style="font-weight:400;color:${pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)'}">(${pct}%)</span></summary><div class="text">${escHtml(aiReason.reasoning)}</div></details>`
+        : '';
+      const aiScoreDisplay = data.scoring_method === 'ai'
+        ? `<div class="ai-score" style="color:${pct >= 70 ? 'var(--success)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)'}">${score}/${max}</div>`
+        : `<div class="ai-score">${score}/${max}</div>`;
+      return `<div class="criterion-row">
+        <div class="name">${label}</div>
+        ${aiScoreDisplay}
+        <div>
+          <input type="number" class="review-input" data-dim="${dk}" data-criterion="${ck}" data-max="${max}"
+            value="${score}" min="0" max="${max}" step="1" />
+          <span class="max">/ ${max}</span>
+        </div>
+        <div>${reasoningHtml}</div>
+      </div>`;
+    }).join('');
+
+    const aiTotal = Object.values(subs).reduce((s, { score }) => s + score, 0);
+    const maxTotal = Object.values(subs).reduce((s, { max }) => s + max, 0);
+    aiGlobalTotal += aiTotal;
+    aiGlobalMax += maxTotal;
+
+    return `<div class="dim-section">
+      <h3>${dimName}（AI: ${aiTotal}/${maxTotal}）</h3>
+      ${criteriaHtml}
+    </div>`;
+  }).join('');
+
+  // Comparison summary
+  const compEl = document.getElementById('score-comparison');
+  document.getElementById('compare-scoring-method').textContent =
+    data.scoring_method === 'ai' ? 'AI 智能评分' : '规则评分';
+  document.getElementById('compare-ai-total').textContent = data.result?.total_score ?? '--';
+
+  if (data.status === 'reviewed' && data.review) {
+    compEl.style.display = 'grid';
+    const adjTotal = data.review.total_score ?? '--';
+    document.getElementById('compare-human-total').textContent = adjTotal;
+    document.getElementById('compare-human-total').style.color =
+      adjTotal >= (data.result?.total_score || 0) ? 'var(--success)' : 'var(--danger)';
+  } else {
+    compEl.style.display = 'grid';
+    document.getElementById('compare-human-total').textContent = '待审核';
+    document.getElementById('compare-human-total').style.color = 'var(--text-secondary)';
+  }
+
+  // Fill review data if already reviewed
+  if (data.status === 'reviewed' && data.review) {
+    document.getElementById('review-comments').value = data.review.comments || '';
+    document.getElementById('reviewer-name').value = data.review.reviewer || '审核员';
+    const adjusted = data.review.adjusted_scores;
+    if (adjusted) {
+      document.querySelectorAll('.review-input').forEach(input => {
+        const dk = input.dataset.dim;
+        const ck = input.dataset.criterion;
+        if (adjusted[dk] && adjusted[dk][ck] && adjusted[dk][ck].score !== undefined) {
+          input.value = adjusted[dk][ck].score;
+        }
+      });
+    }
+  } else {
+    document.getElementById('review-comments').value = '';
+    document.getElementById('reviewer-name').value = '审核员';
+  }
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function saveReview() {
+  const btn = document.getElementById('btn-save-review');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span> 保存中...';
+
+  try {
+    const adjustedScores = {};
+    document.querySelectorAll('.review-input').forEach(input => {
+      const dk = input.dataset.dim;
+      const ck = input.dataset.criterion;
+      const max = parseInt(input.dataset.max);
+      const val = Math.max(0, Math.min(max, parseInt(input.value) || 0));
+      if (!adjustedScores[dk]) adjustedScores[dk] = {};
+      adjustedScores[dk][ck] = { score: val, max };
+    });
+
+    const reviewData = {
+      reviewer: document.getElementById('reviewer-name').value.trim() || '审核员',
+      comments: document.getElementById('review-comments').value.trim(),
+      adjusted_scores: adjustedScores,
+    };
+
+    await api('/api/assessments/' + currentId + '/review', {
+      method: 'PUT',
+      body: JSON.stringify(reviewData),
+    });
+
+    showToast('审核结果已保存', 'success');
+    setTimeout(() => showList(), 1000);
+  } catch (e) {
+    showToast('保存失败: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '保存审核结果';
+  }
+}
+
+// Init
+loadList();
+</script>
+</body>
+</html>
