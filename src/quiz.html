@@ -246,6 +246,22 @@ body {
 .grade-fail { background: linear-gradient(135deg, #dc2626, #ef4444) !important; }
 
 .chart-wrap { max-width: 360px; margin: 0 auto; }
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all .15s;
+  user-select: none;
+}
+.lang-toggle:hover { border-color: var(--primary); color: var(--primary); }
+.lang-toggle.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 .feedback-list { display: grid; gap: 10px; }
 .feedback-item {
@@ -537,7 +553,7 @@ body {
 
     <div class="results-grid">
       <div class="card">
-        <h2>能力雷达图</h2>
+        <h2>能力雷达图 <span class="lang-toggle" id="lang-toggle" role="button" tabindex="0">EN</span></h2>
         <div class="chart-wrap">
           <canvas id="radar-chart"></canvas>
         </div>
@@ -625,6 +641,7 @@ let state = {
   result: null,
   scoringInfo: null,
   radarChart: null,
+  lang: 'zh',
 };
 
 function escHtml(s) {
@@ -891,6 +908,53 @@ btnSubmit.addEventListener('click', async () => {
   }
 });
 
+const LABELS = {
+  zh: ['认知拆解', '人机协同', '工程架构'],
+  en: ['Cognition', 'Synergy', 'Engineering'],
+};
+
+function renderRadarChart(radarData) {
+  const ctx = document.getElementById('radar-chart').getContext('2d');
+  if (state.radarChart) state.radarChart.destroy();
+  state.radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: LABELS[state.lang],
+      datasets: [{
+        label: state.name,
+        data: [radarData.Cognition, radarData.Synergy, radarData.Engineering],
+        backgroundColor: 'rgba(79,70,229,0.12)',
+        borderColor: '#4f46e5',
+        borderWidth: 2,
+        pointBackgroundColor: '#4f46e5',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 5,
+          ticks: { stepSize: 1, font: { size: 10 } },
+          pointLabels: { font: { size: 12, weight: 'bold' } },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.r !== undefined ? ctx.parsed.r.toFixed(1) + ' / 5.0' : ''
+          }
+        }
+      }
+    }
+  });
+}
+
 // Screen 4: Results
 function renderResults(data) {
   const dimNames = { C: '认知拆解', H: '人机协同', E: '工程架构' };
@@ -923,45 +987,7 @@ function renderResults(data) {
   else badge.classList.add('grade-fail');
 
   // Radar chart
-  const ctx = document.getElementById('radar-chart').getContext('2d');
-  if (state.radarChart) state.radarChart.destroy();
-  state.radarChart = new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels: ['认知拆解\nCognition', '人机协同\nSynergy', '工程架构\nEngineering'],
-      datasets: [{
-        label: state.name,
-        data: [data.radarData.Cognition, data.radarData.Synergy, data.radarData.Engineering],
-        backgroundColor: 'rgba(79,70,229,0.12)',
-        borderColor: '#4f46e5',
-        borderWidth: 2,
-        pointBackgroundColor: '#4f46e5',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      scales: {
-        r: {
-          beginAtZero: true,
-          max: 5,
-          ticks: { stepSize: 1, font: { size: 10 } },
-          pointLabels: { font: { size: 12, weight: 'bold' } },
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ctx.parsed.r !== undefined ? ctx.parsed.r.toFixed(1) + ' / 5.0' : ''
-          }
-        }
-      }
-    }
-  });
+  renderRadarChart(data.radarData);
 
   // Feedback
   const feedbackList = document.getElementById('feedback-list');
@@ -1040,6 +1066,7 @@ document.getElementById('btn-download-report').addEventListener('click', async (
     radar_data: state.result.radarData,
     feedback: state.result.feedback,
     answers: state.answers,
+    lang: state.lang,
   };
 
   try {
@@ -1203,6 +1230,14 @@ document.getElementById('btn-config-save').addEventListener('click', async () =>
   } catch (e) {
     cfgStatus.innerHTML = `<span class="config-error">✗ 保存失败: ${e.message}</span>`;
   }
+});
+
+// Language toggle for radar chart
+document.getElementById('lang-toggle').addEventListener('click', () => {
+  state.lang = state.lang === 'zh' ? 'en' : 'zh';
+  const btn = document.getElementById('lang-toggle');
+  btn.textContent = state.lang === 'zh' ? 'EN' : '中文';
+  if (state.radarChart) renderRadarChart(state.result.radarData);
 });
 
 // Init

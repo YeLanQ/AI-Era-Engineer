@@ -97,6 +97,23 @@ body {
 .grade-fail { background: linear-gradient(135deg, #dc2626, #ef4444) !important; }
 
 .chart-container { max-width: 400px; margin: 0 auto; }
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all .15s;
+  user-select: none;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+.lang-toggle:hover { border-color: #4f46e5; color: #4f46e5; }
 
 .breakdown { display: grid; gap: 16px; }
 .breakdown-item { border-left: 3px solid var(--primary); padding-left: 12px; }
@@ -179,12 +196,12 @@ body {
       </div>
     </div>
 
-    <div class="card">
-      <h2>能力雷达图</h2>
-      <div class="chart-container">
-        <canvas id="radarChart"></canvas>
-      </div>
-    </div>
+<div class="card">
+  <h2>能力雷达图 <span class="lang-toggle" id="langToggle" role="button" tabindex="0">EN</span></h2>
+  <div class="chart-container">
+    <canvas id="radarChart"></canvas>
+  </div>
+</div>
   </div>
 
   <div class="grid grid-2">
@@ -249,39 +266,60 @@ body {
 
 <script>
 (function() {
-  var ctx = document.getElementById('radarChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels: ['认知拆解\nCognition', '人机协同\nSynergy', '工程架构\nEngineering'],
-      datasets: [{
-        label: '{{candidate}}',
-        data: [{{radar_cognition}}, {{radar_synergy}}, {{radar_engineering}}],
-        backgroundColor: 'rgba(79,70,229,0.15)',
-        borderColor: '#4f46e5',
-        borderWidth: 2,
-        pointBackgroundColor: '#4f46e5',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      scales: {
-        r: {
-          beginAtZero: true,
-          max: 5,
-          ticks: { stepSize: 1, font: { size: 10 } },
-          pointLabels: { font: { size: 12, weight: 'bold' } }
-        }
+  var labels = {
+    zh: ['认知拆解', '人机协同', '工程架构'],
+    en: ['Cognition', 'Synergy', 'Engineering'],
+  };
+  var currentLang = '{{lang}}' === 'en' ? 'en' : 'zh';
+  var chart;
+
+  function renderRadar() {
+    var ctx = document.getElementById('radarChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: labels[currentLang],
+        datasets: [{
+          label: '{{candidate}}',
+          data: [{{radar_cognition}}, {{radar_synergy}}, {{radar_engineering}}],
+          backgroundColor: 'rgba(79,70,229,0.15)',
+          borderColor: '#4f46e5',
+          borderWidth: 2,
+          pointBackgroundColor: '#4f46e5',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
       },
-      plugins: {
-        legend: { display: false }
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 5,
+            ticks: { stepSize: 1, font: { size: 10 } },
+            pointLabels: { font: { size: 12, weight: 'bold' } }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
       }
-    }
-  });
+    });
+  }
+
+  renderRadar();
+
+  var toggle = document.getElementById('langToggle');
+  if (toggle) {
+    toggle.addEventListener('click', function() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      toggle.textContent = currentLang === 'zh' ? 'EN' : '中文';
+      renderRadar();
+    });
+  }
 
   var grade = document.getElementById('gradeBadge');
   if (grade) {

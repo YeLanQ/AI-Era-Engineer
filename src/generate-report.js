@@ -42,6 +42,7 @@ function fillTemplate(template, data) {
   html = html.replace(/\{\{radar_synergy\}\}/g, radarData.Synergy ?? 0);
   html = html.replace(/\{\{radar_engineering\}\}/g, radarData.Engineering ?? 0);
   html = html.replace(/\{\{radar_overall\}\}/g, radarData.Overall ?? 0);
+  html = html.replace(/\{\{lang\}\}/g, data.lang || 'zh');
 
   const feedback = data.feedback || {};
   const feedbackHtml = Object.entries(feedback).map(([dim, info]) => {
