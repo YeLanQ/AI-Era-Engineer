@@ -914,8 +914,13 @@ const LABELS = {
 };
 
 function renderRadarChart(radarData) {
-  const ctx = document.getElementById('radar-chart').getContext('2d');
-  if (state.radarChart) state.radarChart.destroy();
+  const canvas = document.getElementById('radar-chart');
+  if (canvas.parentElement.offsetWidth === 0) {
+    setTimeout(() => renderRadarChart(radarData), 50);
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  if (state.radarChart) { state.radarChart.destroy(); state.radarChart = null; }
   state.radarChart = new Chart(ctx, {
     type: 'radar',
     data: {
@@ -987,7 +992,7 @@ function renderResults(data) {
   else badge.classList.add('grade-fail');
 
   // Radar chart
-  renderRadarChart(data.radarData);
+  setTimeout(() => renderRadarChart(data.radarData), 0);
 
   // Feedback
   const feedbackList = document.getElementById('feedback-list');
@@ -1245,7 +1250,9 @@ document.getElementById('lang-toggle').addEventListener('click', () => {
   state.lang = state.lang === 'zh' ? 'en' : 'zh';
   const btn = document.getElementById('lang-toggle');
   btn.textContent = state.lang === 'zh' ? 'EN' : '中文';
-  if (state.radarChart) renderRadarChart(state.result.radarData);
+  if (state.radarChart || (state.result && state.result.radarData)) {
+    renderRadarChart(state.result.radarData);
+  }
 });
 
 // Init
