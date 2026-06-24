@@ -1,0 +1,25 @@
+{
+  "eval_id": 0,
+  "eval_name": "L4-order-exception-assessment",
+  "prompt": "评估L4工程师，我需要设计一个智能订单异常处理系统，包括支付失败、库存不足、订单重复等异常场景的处理逻辑，需要实现完整的异常捕获、转换和通知功能",
+  "assertions": [
+    {
+      "name": "contains_three_dimensions",
+      "description": "评估结果应该包含认知拆解(C)、人机协同(H)和工程架构(E)三个维度",
+      "expected": "包含'C'、'H'、'E'维度评分",
+      "type": "contains"
+    },
+    {
+      "name": "has_comprehensive_assessment",
+      "description": "评估应该提供完整的评估方案，包括场景、缺陷、任务和交付物",
+      "expected": "包含'meta'、'scenario'、'defects'、'tasks'、'deliverables'字段",
+      "type": "structure"
+    },
+    {
+      "name": "includes_specific_scenarios",
+      "description": "评估方案应该包含支付失败、库存不足和订单重复等具体异常场景",
+      "expected": "包含'支付失败'、'库存不足'、'订单重复'场景",
+      "type": "contains"
+    }
+  ]
+}

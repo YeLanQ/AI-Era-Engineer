@@ -1,0 +1,27 @@
+{
+  "name": "engineer-assessor-report",
+  "version": "1.0.0",
+  "description": "AI时代工程师能力评估报告生成器",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node src/generate-report.js",
+    "generate:sample": "node src/generate-report.js --sample",
+    "generate:from-json": "node src/generate-report.js --input data/assessment.json",
+    "dev": "node src/generate-report.js --sample --open",
+    "quiz": "node src/quiz.js",
+    "quiz:assess": "node src/quiz.js && node src/generate-report.js --input data/assessment.json",
+    "quiz:demo": "node src/quiz-demo.js",
+    "quiz:web": "node src/quiz-server.js"
+  },
+  "keywords": [
+    "assessment",
+    "engineer",
+    "report"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "js-yaml": "^5.1.0"
+  }
+}

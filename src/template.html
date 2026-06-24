@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程师能力评估报告 - {{candidate}}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --primary: #4f46e5;
+  --primary-light: #eef2ff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,.07),0 10px 15px rgba(0,0,0,.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 24px;
+}
+.container { max-width: 960px; margin: 0 auto; }
+
+.header {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 32px 40px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.header .subtitle { font-size: 14px; opacity: .85; }
+.header .meta { display: flex; gap: 32px; margin-top: 20px; flex-wrap: wrap; }
+.header .meta-item { display: flex; flex-direction: column; }
+.header .meta-item .label { font-size: 12px; opacity: .7; text-transform: uppercase; letter-spacing: .5px; }
+.header .meta-item .value { font-size: 18px; font-weight: 600; }
+
+.grid { display: grid; gap: 24px; margin-bottom: 24px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.score-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 640px) { .score-cards { grid-template-columns: 1fr; } }
+.score-card {
+  background: var(--primary-light);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid rgba(79,70,229,.15);
+}
+.score-card .dimension { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
+.score-card .score { font-size: 32px; font-weight: 700; color: var(--primary); margin: 4px 0; }
+.score-card .level-label { font-size: 12px; color: var(--text-secondary); }
+
+.total-section { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+.total-section .total-score { text-align: center; }
+.total-section .total-score .number { font-size: 48px; font-weight: 700; color: var(--primary); }
+.total-section .total-score .label { font-size: 14px; color: var(--text-secondary); }
+.total-section .grade {
+  text-align: center;
+}
+.total-section .grade .badge {
+  display: inline-block;
+  padding: 8px 24px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+}
+.grade-excellent { background: linear-gradient(135deg, #059669, #10b981) !important; }
+.grade-good { background: linear-gradient(135deg, #2563eb, #3b82f6) !important; }
+.grade-pass { background: linear-gradient(135deg, #d97706, #f59e0b) !important; }
+.grade-fail { background: linear-gradient(135deg, #dc2626, #ef4444) !important; }
+
+.chart-container { max-width: 400px; margin: 0 auto; }
+
+.breakdown { display: grid; gap: 16px; }
+.breakdown-item { border-left: 3px solid var(--primary); padding-left: 12px; }
+.breakdown-item .name { font-weight: 600; font-size: 14px; }
+.breakdown-item .score-bar { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.breakdown-item .bar-track { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.breakdown-item .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #4f46e5, #7c3aed); transition: width .6s ease; }
+.breakdown-item .bar-value { font-size: 12px; color: var(--text-secondary); min-width: 28px; text-align: right; }
+
+.feedback-list { display: grid; gap: 12px; }
+.feedback-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+.feedback-item .dimension-name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.feedback-item .dimension-name .level-tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+.tag-high { background: #d1fae5; color: #065f46; }
+.tag-medium { background: #fef3c7; color: #92400e; }
+.tag-low { background: #fee2e2; color: #991b1b; }
+.feedback-item .suggestion { margin-top: 4px; font-size: 13px; color: var(--text-secondary); }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.detail-label { font-size: 12px; color: var(--text-secondary); }
+.detail-value { font-weight: 600; }
+
+.footer { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>工程师能力评估报告</h1>
+    <div class="subtitle">AI-Era Engineer Capability Assessment Report</div>
+    <div class="meta">
+      <div class="meta-item"><span class="label">候选人</span><span class="value">{{candidate}}</span></div>
+      <div class="meta-item"><span class="label">评估等级</span><span class="value">{{level}}</span></div>
+      <div class="meta-item"><span class="label">业务领域</span><span class="value">{{domain}}</span></div>
+      <div class="meta-item"><span class="label">评估日期</span><span class="value">{{date}}</span></div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>三维能力评分</h2>
+      <div class="score-cards">
+        <div class="score-card">
+          <div class="dimension">认知拆解</div>
+          <div class="score" id="scoreC">{{score_cognition}}</div>
+          <div class="level-label">Cognition</div>
+        </div>
+        <div class="score-card">
+          <div class="dimension">人机协同</div>
+          <div class="score" id="scoreH">{{score_synergy}}</div>
+          <div class="level-label">Human-AI Synergy</div>
+        </div>
+        <div class="score-card">
+          <div class="dimension">工程架构</div>
+          <div class="score" id="scoreE">{{score_engineering}}</div>
+          <div class="level-label">Engineering</div>
+        </div>
+      </div>
+      <div class="total-section">
+        <div class="total-score">
+          <div class="number" id="totalScore">{{total_score}}</div>
+          <div class="label">综合评分</div>
+        </div>
+        <div class="grade">
+          <div class="badge" id="gradeBadge">{{grade}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>能力雷达图</h2>
+      <div class="chart-container">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>评分明细</h2>
+      <div class="breakdown" id="breakdownContainer">
+        <div class="breakdown-item">
+          <div class="name">认知拆解 (Cognition)</div>
+          <div class="score-bar">
+            <div class="bar-track"><div class="bar-fill" style="width: {{score_cognition}}%"></div></div>
+            <span class="bar-value">{{score_cognition}}</span>
+          </div>
+        </div>
+        <div class="breakdown-item">
+          <div class="name">人机协同 (Synergy)</div>
+          <div class="score-bar">
+            <div class="bar-track"><div class="bar-fill" style="width: {{score_synergy}}%"></div></div>
+            <span class="bar-value">{{score_synergy}}</span>
+          </div>
+        </div>
+        <div class="breakdown-item">
+          <div class="name">工程架构 (Engineering)</div>
+          <div class="score-bar">
+            <div class="bar-track"><div class="bar-fill" style="width: {{score_engineering}}%"></div></div>
+            <span class="bar-value">{{score_engineering}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>发展建议</h2>
+      <div class="feedback-list" id="feedbackContainer">
+        {{feedback}}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>评估详情</h2>
+    <div class="detail-grid">
+      <div><div class="detail-label">认知拆解 (C)</div><div class="detail-value">{{score_cognition}} / 100</div></div>
+      <div><div class="detail-label">雷达图 - 认知拆解</div><div class="detail-value">{{radar_cognition}} / 5.0</div></div>
+      <div><div class="detail-label">人机协同 (H)</div><div class="detail-value">{{score_synergy}} / 100</div></div>
+      <div><div class="detail-label">雷达图 - 人机协同</div><div class="detail-value">{{radar_synergy}} / 5.0</div></div>
+      <div><div class="detail-label">工程架构 (E)</div><div class="detail-value">{{score_engineering}} / 100</div></div>
+      <div><div class="detail-label">雷达图 - 工程架构</div><div class="detail-value">{{radar_engineering}} / 5.0</div></div>
+      <div><div class="detail-label">综合评分</div><div class="detail-value">{{total_score}} / 100</div></div>
+      <div><div class="detail-label">雷达图 - 综合</div><div class="detail-value">{{radar_overall}} / 5.0</div></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    生成时间: {{date}} &mdash; AI时代工程师能力评估系统 v1.0.0
+  </div>
+</div>
+
+<script>
+(function() {
+  var ctx = document.getElementById('radarChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['认知拆解\nCognition', '人机协同\nSynergy', '工程架构\nEngineering'],
+      datasets: [{
+        label: '{{candidate}}',
+        data: [{{radar_cognition}}, {{radar_synergy}}, {{radar_engineering}}],
+        backgroundColor: 'rgba(79,70,229,0.15)',
+        borderColor: '#4f46e5',
+        borderWidth: 2,
+        pointBackgroundColor: '#4f46e5',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 5,
+          ticks: { stepSize: 1, font: { size: 10 } },
+          pointLabels: { font: { size: 12, weight: 'bold' } }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  var grade = document.getElementById('gradeBadge');
+  if (grade) {
+    var text = grade.textContent.trim();
+    if (text.includes('专家') || text.includes('Expert')) grade.classList.add('grade-excellent');
+    else if (text.includes('熟练') || text.includes('Proficient')) grade.classList.add('grade-good');
+    else if (text.includes('合格') || text.includes('Qualified')) grade.classList.add('grade-pass');
+    else grade.classList.add('grade-fail');
+  }
+})();
+</script>
+</body>
+</html>

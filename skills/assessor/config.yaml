@@ -1,0 +1,227 @@
+# AI时代工程师能力评估系统配置文件
+
+# 评估基本配置
+assessment:
+  # 版本号
+  version: "1.0.0"
+  
+  # 评估支持的等级
+  levels: ["L1", "L4", "L7", "L10"]
+  
+  # 评估维度定义
+  dimensions:
+    - name: "Cognition"
+      chinese_name: "认知拆解"
+      weight_range:
+        "L1": 0.20
+        "L4": 0.25
+        "L7": 0.30
+        "L10": 0.40
+      description: "将模糊业务需求转化为AI可执行任务的能力"
+      
+    - name: "Synergy"
+      chinese_name: "人机协同"
+      weight_range:
+        "L1": 0.30
+        "L4": 0.35
+        "L7": 0.30
+        "L10": 0.20
+      description: "与AI工具协作、优化AI输出并审查代码的能力"
+      
+    - name: "Engineering"
+      chinese_name: "工程架构"
+      weight_range:
+        "L1": 0.50
+        "L4": 0.40
+        "L7": 0.40
+        "L10": 0.40
+      description: "设计高可用、安全、可维护的系统架构的能力"
+  
+  # 评估规则
+  rules:
+    # 通过分数要求
+    passing_score: 75
+    
+    # 评估时长限制（分钟）
+    time_limit: 240
+    
+    # 是否强制要求AI协作日志
+    require_ai_log: true
+    
+    # 是否强制要求答辩
+    require_defense: true
+  
+  # AI模型配置
+  ai_models:
+    - name: "GPT-4"
+      provider: "OpenAI"
+      cost_per_token: 0.00003
+      quality_score: 8.5
+      
+    - name: "Claude 3.5 Sonnet"
+      provider: "Anthropic"
+      cost_per_token: 0.000025
+      quality_score: 8.8
+      
+    - name: "Gemini Pro"
+      provider: "Google"
+      cost_per_token: 0.000015
+      quality_score: 8.2
+
+# 评分标准
+scoring:
+  # 工程架构维度评分标准
+  engineering:
+    # 功能完整性评分 (20分)
+    functionality:
+      full_score: 20
+      criteria:
+        - "实现所有指定功能"  # 20分
+        - "部分功能实现"      # 10分
+        - "功能不完整"        # 0分
+    
+    # 代码质量评分 (15分)
+    code_quality:
+      full_score: 15
+      criteria:
+        - "代码结构清晰，易读" # 分数
+        - "包含必要的异常处理" # 分数
+        - "包含性能优化" # 分数
+        - "包含注释说明" # 分数
+    # 安全性评分 (15分)
+    security:
+      full_score: 15
+      criteria:
+        - "防止常见安全漏洞" # 分数
+        - "包含身份验证" # 分数
+        - "包含数据加密" # 分数
+    # 性能评分 (10分)
+    performance:
+      full_score: 10
+      criteria:
+        - "性能优化良好" # 分数
+        - "性能可接受" # 分数
+        - "性能需要优化" # 分数
+    # 可维护性评分 (10分)
+    maintainability:
+      full_score: 10
+      criteria:
+        - "代码可维护性好" # 分数
+        - "代码可维护性一般" # 分数
+        - "代码可维护性差" # 分数
+    # 兼容性评分 (10分)
+    compatibility:
+      full_score: 10
+      criteria:
+        - "兼容性好" # 分数
+        - "兼容性一般" # 分数
+        - "兼容性差" # 分数
+  # 人机协同维度评分标准
+  synergy:
+    # 需求拆解评分 (10分)
+    requirement_decomposition:
+      full_score: 10
+      criteria:
+        - "需求拆解完整" # 分数
+        - "需求拆解基本完整" # 分数
+        - "需求拆解不完整" # 分数
+    # 调试纠偏评分 (15分)
+    debugging_correction:
+      full_score: 15
+      criteria:
+        - "多轮对话优化代码" # 分数
+        - "单轮对话完成任务" # 分数
+        - "未使用AI工具" # 分数
+    # 代码审查评分 (15分)
+    code_review:
+      full_score: 15
+      criteria:
+        - "人工代码修改多" # 分数
+        - "人工代码修改少" # 分数
+        - "未进行人工修改" # 分数
+    # 协同效率评分 (10分)
+    collaboration_efficiency:
+      full_score: 10
+      criteria:
+        - "协同效率高" # 分数
+        - "协同效率一般" # 分数
+        - "协同效率低" # 分数
+    # 质量控制评分 (10分)
+    quality_control:
+      full_score: 10
+      criteria:
+        - "质量控制严格" # 分数
+        - "质量控制基本" # 分数
+        - "缺乏质量控制" # 分数
+  # 认知拆解维度评分标准
+  cognition:
+    # 基于答辩评分 (20分)
+    interview:
+      full_score: 20
+      criteria:
+        - "答辩专业，逻辑清晰" # 分数
+        - "答辩基本专业" # 分数
+        - "答辩不专业" # 分数
+    # 需求理解评分 (5分)
+    requirement_understanding:
+      full_score: 5
+      criteria:
+        - "需求理解透彻" # 分数
+        - "需求理解基本透彻" # 分数
+        - "需求理解不足" # 分数
+    # 问题拆解评分 (5分)
+    problem_decomposition:
+      full_score: 5
+      criteria:
+        - "问题拆解完整" # 分数
+        - "问题拆解基本完整" # 分数
+        - "问题拆解不完整" # 分数
+# 输出配置
+output:
+  # 支持的报告格式
+  formats:
+    - "pdf"
+    - "html"
+    - "json"
+    - "excel"
+    
+  # 默认输出目录
+  output_dir: "./reports"
+  
+  # PDF生成配置
+  pdf:
+    page_size: "A4"
+    margin: "2cm"
+    font_family: "微软雅黑, Arial, sans-serif"
+    
+  # HTML报告配置
+  html:
+    theme: "default"
+    include_charts: true
+    include_detailed_feedback: true
+    
+  # Excel配置
+  excel:
+    include_charts: true
+    include_analysis: true
+    sheet_names:
+      - "评估结果"
+      - "雷达图"
+
+# 日志配置
+logging:
+  level: "INFO"
+  log_file: "assessment_system.log"
+  max_size: "10MB"
+  backup_count: 5
+  
+  # 控制台输出配置
+  console:
+    enabled: true
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+  # 文件输出配置
+  file_output:
+    enabled: true
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    path: "logs/assessment_system.log"

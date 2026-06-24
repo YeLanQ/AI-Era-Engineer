@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI时代工程师能力评估 - 在线答题系统</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #eef2ff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,.07), 0 10px 15px rgba(0,0,0,.1);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+.header {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 32px 40px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.header .subtitle { font-size: 14px; opacity: .85; }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.form-group { margin-bottom: 20px; }
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.form-group .desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color .2s;
+  background: #fff;
+}
+.form-group input[type="text"]:focus,
+.form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+.form-group textarea { resize: vertical; min-height: 120px; }
+
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 500px) { .options-grid { grid-template-columns: 1fr; } }
+.option-btn {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+}
+.option-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.option-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+}
+.option-btn .opt-title { font-weight: 600; color: var(--text); }
+.option-btn .opt-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,.3); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary { background: #f1f5f9; color: var(--text); }
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-block { width: 100%; }
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.steps { display: flex; gap: 8px; margin-bottom: 28px; }
+.step {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-secondary);
+  background: #f1f5f9;
+  transition: all .3s;
+}
+.step.active { background: var(--primary); color: #fff; }
+.step.done { background: #d1fae5; color: #065f46; }
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.question-header .q-number { font-weight: 700; font-size: 16px; color: var(--primary); }
+.question-header .q-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; }
+.question-header .q-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.tag-difficulty { background: #fef3c7; color: #92400e; }
+.tag-dimension { background: #e0e7ff; color: #3730a3; }
+.tag-hint { background: #f0fdf4; color: #166534; }
+
+.q-description {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.answer-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.answer-label span { font-weight: 600; font-size: 14px; }
+.answer-label .optional { font-weight: 400; color: var(--text-secondary); font-size: 12px; }
+
+.char-count { text-align: right; font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+.results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 640px) { .results-grid { grid-template-columns: 1fr; } }
+
+.score-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+@media (max-width: 500px) { .score-cards { grid-template-columns: 1fr; } }
+.score-card {
+  background: var(--primary-light);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid rgba(79,70,229,.12);
+}
+.score-card .dim-label { font-size: 12px; color: var(--text-secondary); letter-spacing: .3px; }
+.score-card .score-value { font-size: 36px; font-weight: 700; color: var(--primary); margin: 4px 0; }
+.score-card .score-bar-track {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.score-card .score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  transition: width .8s ease;
+}
+
+.total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.total-row .total-score { text-align: center; }
+.total-row .total-score .num { font-size: 44px; font-weight: 700; color: var(--primary); }
+.total-row .total-score .lbl { font-size: 13px; color: var(--text-secondary); }
+.total-row .grade-badge {
+  display: inline-block;
+  padding: 10px 28px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+}
+.grade-excellent { background: linear-gradient(135deg, #059669, #10b981) !important; }
+.grade-good { background: linear-gradient(135deg, #2563eb, #3b82f6) !important; }
+.grade-pass { background: linear-gradient(135deg, #d97706, #f59e0b) !important; }
+.grade-fail { background: linear-gradient(135deg, #dc2626, #ef4444) !important; }
+
+.chart-wrap { max-width: 360px; margin: 0 auto; }
+
+.feedback-list { display: grid; gap: 10px; }
+.feedback-item {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+.feedback-item .fb-name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.feedback-item .fb-level {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.lv-high { background: #d1fae5; color: #065f46; }
+.lv-medium { background: #fef3c7; color: #92400e; }
+.lv-low { background: #fee2e2; color: #991b1b; }
+.feedback-item .fb-text { margin-top: 4px; font-size: 13px; color: var(--text-secondary); }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.mb-16 { margin-bottom: 16px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(79,70,229,.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.progress-bar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+.modal h3 { font-size: 20px; margin-bottom: 8px; }
+.modal p { color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; }
+
+.answers-review { margin-top: 20px; }
+.answers-review details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.answers-review summary { cursor: pointer; font-weight: 600; }
+.answers-review .qa-text {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.answers-review .qa-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>AI时代工程师能力评估</h1>
+    <div class="subtitle">在线答题系统 &mdash; AI-Era Engineer Capability Assessment</div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step active" data-step="0">1. 基本信息</div>
+    <div class="step" data-step="1">2. 选择等级</div>
+    <div class="step" data-step="2">3. 选择领域</div>
+    <div class="step" data-step="3">4. 答题</div>
+    <div class="step" data-step="4">5. 评估结果</div>
+  </div>
+
+  <!-- Screen 0: Name Input -->
+  <div class="screen active" id="screen-name">
+    <div class="card">
+      <h2>欢迎参加评估</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;">
+        本次评估将从<strong>认知拆解</strong>、<strong>人机协同</strong>、<strong>工程架构</strong>三个维度全面考察您的工程能力。
+        请根据真实水平作答。
+      </p>
+      <div class="form-group">
+        <label>候选人姓名</label>
+        <input type="text" id="input-name" placeholder="请输入您的姓名" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary btn-block" id="btn-name-next" disabled>下一步</button>
+    </div>
+  </div>
+
+  <!-- Screen 1: Level Selection -->
+  <div class="screen" id="screen-level">
+    <div class="card">
+      <h2>选择评估等级</h2>
+      <p class="desc" style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+        请选择与您当前能力相匹配的等级
+      </p>
+      <div class="options-grid" id="level-options"></div>
+      <button class="btn btn-primary btn-block mt-20" id="btn-level-next" disabled>下一步</button>
+    </div>
+  </div>
+
+  <!-- Screen 2: Domain Selection -->
+  <div class="screen" id="screen-domain">
+    <div class="card">
+      <h2>选择业务领域</h2>
+      <p class="desc" style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+        请选择您最熟悉的业务领域，试题将基于该领域场景设计
+      </p>
+      <div class="options-grid" id="domain-options"></div>
+      <button class="btn btn-primary btn-block mt-20" id="btn-domain-start">开始答题</button>
+    </div>
+  </div>
+
+  <!-- Screen 3: Quiz -->
+  <div class="screen" id="screen-quiz">
+    <div class="card">
+      <div class="progress-bar" id="quiz-progress-bar">
+        <div class="fill" id="quiz-progress-fill" style="width:0%"></div>
+      </div>
+      <div class="question-header">
+        <div class="q-number" id="q-number"></div>
+        <div class="q-meta">
+          <span id="q-difficulty"></span>
+          <span id="q-time"></span>
+        </div>
+      </div>
+      <h3 id="q-title" style="font-size:16px;font-weight:600;"></h3>
+      <div class="tags" id="q-tags"></div>
+      <div class="q-description" id="q-description"></div>
+
+      <div class="form-group">
+        <div class="answer-label">
+          <span>作答内容</span>
+        </div>
+        <textarea id="input-answer" placeholder="请详细作答，包括：思路分析、设计方案、代码实现等..."></textarea>
+        <div class="char-count"><span id="answer-count">0</span> 字</div>
+      </div>
+
+      <div class="form-group">
+        <div class="answer-label">
+          <span>AI协作过程 <span class="optional">（可选）</span></span>
+        </div>
+        <textarea id="input-ailog" placeholder="请描述您与AI协作的过程，使用了哪些提示词、如何优化AI输出等..."></textarea>
+        <div class="char-count"><span id="ailog-count">0</span> 字</div>
+      </div>
+
+      <div class="flex-between">
+        <button class="btn btn-secondary" id="btn-prev" disabled>上一题</button>
+        <button class="btn btn-primary" id="btn-next">下一题</button>
+        <button class="btn btn-success hidden" id="btn-submit">提交评估</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Results -->
+  <div class="screen" id="screen-results">
+    <div class="card">
+      <h2>评估结果</h2>
+      <div id="result-info" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;"></div>
+
+      <div class="score-cards" id="score-cards"></div>
+
+      <div class="total-row">
+        <div class="total-score">
+          <div class="num" id="total-score-num">0</div>
+          <div class="lbl">综合评分</div>
+        </div>
+        <div>
+          <div class="grade-badge" id="grade-badge">待提升</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-grid">
+      <div class="card">
+        <h2>能力雷达图</h2>
+        <div class="chart-wrap">
+          <canvas id="radar-chart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h2>发展建议</h2>
+        <div class="feedback-list" id="feedback-list"></div>
+      </div>
+    </div>
+
+    <div class="card answers-review" id="answers-review">
+      <h2>作答回顾</h2>
+    </div>
+
+    <div class="btn-group" style="justify-content:center;margin-top:8px;">
+      <button class="btn btn-primary" id="btn-download-report">下载完整报告</button>
+      <button class="btn btn-secondary" id="btn-restart">重新评估</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-loading">
+  <div class="modal">
+    <div class="loading" style="width:40px;height:40px;margin:0 auto 16px;"></div>
+    <h3>正在评分</h3>
+    <p>请稍候，系统正在分析您的作答...</p>
+  </div>
+</div>
+
+<script>
+let state = {
+  name: '',
+  level: null,
+  domain: null,
+  questions: [],
+  answers: [],
+  currentIndex: 0,
+  result: null,
+  radarChart: null,
+};
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+// Step navigation
+function updateSteps(activeIdx) {
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.toggle('active', i === activeIdx);
+    el.classList.toggle('done', i < activeIdx);
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Screen 0: Name
+const nameInput = document.getElementById('input-name');
+const nameNext = document.getElementById('btn-name-next');
+
+nameInput.addEventListener('input', () => {
+  nameNext.disabled = !nameInput.value.trim();
+});
+nameNext.addEventListener('click', () => {
+  state.name = nameInput.value.trim();
+  updateSteps(1);
+  showScreen('screen-level');
+});
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !nameNext.disabled) nameNext.click();
+});
+
+// Screen 1: Level
+const levelContainer = document.getElementById('level-options');
+const levelNext = document.getElementById('btn-level-next');
+
+async function loadLevels() {
+  const config = await api('/api/config');
+  levelContainer.innerHTML = config.levels.map(l => `
+    <button class="option-btn" data-value="${l.id}">
+      <div class="opt-title">${l.name}</div>
+    </button>
+  `).join('');
+
+  levelContainer.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      levelContainer.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.level = btn.dataset.value;
+      levelNext.disabled = false;
+    });
+  });
+}
+
+levelNext.addEventListener('click', () => {
+  updateSteps(2);
+  showScreen('screen-domain');
+  loadDomains();
+});
+
+// Screen 2: Domain
+const domainContainer = document.getElementById('domain-options');
+const domainStart = document.getElementById('btn-domain-start');
+
+async function loadDomains() {
+  const config = await api('/api/config');
+  domainContainer.innerHTML = config.domains.map(d => `
+    <button class="option-btn" data-value="${d}">
+      <div class="opt-title">${d}</div>
+    </button>
+  `).join('');
+
+  domainContainer.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      domainContainer.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.domain = btn.dataset.value;
+    });
+  });
+}
+
+domainStart.addEventListener('click', async () => {
+  if (!state.domain) return alert('请选择业务领域');
+  updateSteps(3);
+  showScreen('screen-quiz');
+
+  const data = await api(`/api/questions?level=${state.level}&domain=${encodeURIComponent(state.domain)}`);
+  state.questions = data.questions;
+  state.answers = state.questions.map(() => ({ questionId: '', answer: '', aiLog: '' }));
+  state.currentIndex = 0;
+  renderQuestion(0);
+});
+
+// Screen 3: Quiz
+const qNumber = document.getElementById('q-number');
+const qTitle = document.getElementById('q-title');
+const qTags = document.getElementById('q-tags');
+const qDifficulty = document.getElementById('q-difficulty');
+const qTime = document.getElementById('q-time');
+const qDescription = document.getElementById('q-description');
+const inputAnswer = document.getElementById('input-answer');
+const inputAiLog = document.getElementById('input-ailog');
+const answerCount = document.getElementById('answer-count');
+const ailogCount = document.getElementById('ailog-count');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnSubmit = document.getElementById('btn-submit');
+const progressFill = document.getElementById('quiz-progress-fill');
+
+inputAnswer.addEventListener('input', () => {
+  answerCount.textContent = inputAnswer.value.length;
+  if (state.answers[state.currentIndex]) {
+    state.answers[state.currentIndex].answer = inputAnswer.value;
+  }
+});
+inputAiLog.addEventListener('input', () => {
+  ailogCount.textContent = inputAiLog.value.length;
+  if (state.answers[state.currentIndex]) {
+    state.answers[state.currentIndex].aiLog = inputAiLog.value;
+  }
+});
+
+function renderQuestion(idx) {
+  const q = state.questions[idx];
+  if (!q) return;
+
+  state.answers[idx].questionId = q.id;
+
+  const total = state.questions.length;
+  qNumber.textContent = `第 ${idx + 1} / ${total} 题`;
+  qTitle.textContent = q.title;
+  progressFill.style.width = `${((idx + 1) / total) * 100}%`;
+
+  qDifficulty.textContent = '⭐ ' + q.difficulty;
+  qTime.textContent = '⏱ ' + q.time_limit + '分钟';
+
+  qTags.innerHTML = '';
+  q.dimensions.forEach(d => {
+    const names = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+    const span = document.createElement('span');
+    span.className = 'tag tag-dimension';
+    span.textContent = names[d] || d;
+    qTags.appendChild(span);
+  });
+  if (q.hints) {
+    q.hints.forEach(h => {
+      const span = document.createElement('span');
+      span.className = 'tag tag-hint';
+      span.textContent = '💡 ' + h;
+      qTags.appendChild(span);
+    });
+  }
+
+  qDescription.textContent = q.description;
+
+  inputAnswer.value = state.answers[idx].answer || '';
+  inputAiLog.value = state.answers[idx].aiLog || '';
+  answerCount.textContent = inputAnswer.value.length;
+  ailogCount.textContent = inputAiLog.value.length;
+
+  btnPrev.disabled = idx === 0;
+  const isLast = idx === total - 1;
+  btnNext.classList.toggle('hidden', isLast);
+  btnSubmit.classList.toggle('hidden', !isLast);
+}
+
+btnPrev.addEventListener('click', () => {
+  if (state.currentIndex > 0) {
+    state.currentIndex--;
+    renderQuestion(state.currentIndex);
+  }
+});
+
+btnNext.addEventListener('click', () => {
+  if (state.currentIndex < state.questions.length - 1) {
+    state.currentIndex++;
+    renderQuestion(state.currentIndex);
+  }
+});
+
+btnSubmit.addEventListener('click', async () => {
+  const hasAnswer = state.answers.some(a => (a.answer || '').trim().length > 0);
+  if (!hasAnswer) {
+    alert('请至少回答一道题目再提交');
+    return;
+  }
+
+  document.getElementById('modal-loading').classList.add('show');
+
+  try {
+    const data = await api('/api/assess', {
+      method: 'POST',
+      body: JSON.stringify({
+        answers: state.answers,
+        level: state.level,
+        candidate: state.name,
+        domain: state.domain,
+      }),
+    });
+
+    state.result = data;
+    updateSteps(4);
+    showScreen('screen-results');
+    renderResults(data);
+  } catch (e) {
+    alert('评分失败: ' + e.message);
+  } finally {
+    document.getElementById('modal-loading').classList.remove('show');
+  }
+});
+
+// Screen 4: Results
+function renderResults(data) {
+  const dimNames = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+  const dimKeys = ['C', 'H', 'E'];
+  const scores = data.result.dimension_scores;
+
+  document.getElementById('result-info').textContent =
+    `${state.name} | ${state.level} | ${state.domain} | ${data.result.grade}`;
+
+  const cards = document.getElementById('score-cards');
+  cards.innerHTML = dimKeys.map(key => `
+    <div class="score-card">
+      <div class="dim-label">${dimNames[key]}</div>
+      <div class="score-value">${scores[key]}</div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:${scores[key]}%"></div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('total-score-num').textContent = data.result.total_score;
+
+  const badge = document.getElementById('grade-badge');
+  badge.textContent = data.result.grade;
+  badge.className = 'grade-badge';
+  if (data.result.grade.includes('专家')) badge.classList.add('grade-excellent');
+  else if (data.result.grade.includes('熟练')) badge.classList.add('grade-good');
+  else if (data.result.grade.includes('合格')) badge.classList.add('grade-pass');
+  else badge.classList.add('grade-fail');
+
+  // Radar chart
+  const ctx = document.getElementById('radar-chart').getContext('2d');
+  if (state.radarChart) state.radarChart.destroy();
+  state.radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['认知拆解\nCognition', '人机协同\nSynergy', '工程架构\nEngineering'],
+      datasets: [{
+        label: state.name,
+        data: [data.radarData.Cognition, data.radarData.Synergy, data.radarData.Engineering],
+        backgroundColor: 'rgba(79,70,229,0.12)',
+        borderColor: '#4f46e5',
+        borderWidth: 2,
+        pointBackgroundColor: '#4f46e5',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 5,
+          ticks: { stepSize: 1, font: { size: 10 } },
+          pointLabels: { font: { size: 12, weight: 'bold' } },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.r !== undefined ? ctx.parsed.r.toFixed(1) + ' / 5.0' : ''
+          }
+        }
+      }
+    }
+  });
+
+  // Feedback
+  const feedbackList = document.getElementById('feedback-list');
+  feedbackList.innerHTML = Object.entries(data.feedback).map(([dim, info]) => {
+    const lvClass = info.level === '高' ? 'lv-high' : info.level === '中等' ? 'lv-medium' : 'lv-low';
+    return `<div class="feedback-item">
+      <div class="fb-name">
+        <span>${dim}</span>
+        <span class="fb-level ${lvClass}">${info.level}</span>
+      </div>
+      <div class="fb-text">${info.suggestion}</div>
+    </div>`;
+  }).join('');
+
+  // Answers review
+  const review = document.getElementById('answers-review');
+  review.innerHTML = '<h2>作答回顾</h2>';
+  state.questions.forEach((q, i) => {
+    const a = state.answers[i];
+    const details = document.createElement('details');
+    details.innerHTML = `
+      <summary>${q.title}</summary>
+      <div class="qa-label">作答内容：</div>
+      <div class="qa-text">${a.answer || '(未作答)'}</div>
+      ${a.aiLog ? `<div class="qa-label mt-16">AI协作记录：</div>
+        <div class="qa-text">${a.aiLog}</div>` : ''}
+    `;
+    review.appendChild(details);
+  });
+}
+
+// Download report
+document.getElementById('btn-download-report').addEventListener('click', async () => {
+  const reportData = {
+    candidate: state.name,
+    level: state.level,
+    domain: state.domain,
+    date: new Date().toISOString().split('T')[0],
+    result: state.result.result,
+    radar_data: state.result.radarData,
+    feedback: state.result.feedback,
+    answers: state.answers,
+  };
+
+  try {
+    const res = await fetch('/api/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reportData),
+    });
+    if (!res.ok) throw new Error('下载失败');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `工程师能力评估_${state.name}_${reportData.date}.html`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (e) {
+    alert('下载失败: ' + e.message);
+  }
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  if (state.radarChart) state.radarChart.destroy();
+  state = {
+    name: '',
+    level: null,
+    domain: null,
+    questions: [],
+    answers: [],
+    currentIndex: 0,
+    result: null,
+    radarChart: null,
+  };
+  nameInput.value = '';
+  nameNext.disabled = true;
+  levelNext.disabled = true;
+  levelContainer.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  updateSteps(0);
+  showScreen('screen-name');
+});
+
+// Init
+loadLevels();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "system-design-assessment",
+  "prompt": "设计一个完整的工程师能力评估系统，包括试题生成、评分引擎和报告模块",
+  "assertions": [
+    {
+      "name": "contains_skill_structure",
+      "description": "技能文档应该包含完整的技能结构，包括元信息、使用指南、技术架构和示例",
+      "expected": "包含'meta信息'、'技能描述'、'使用指南'、'技术架构'字段",
+      "type": "structure"
+    },
+    {
+      "name": "has_implementation_examples",
+      "description": "应该提供实际的使用示例，展示如何评估不同级别的工程师",
+      "expected": "包含L4、L7、L10级别的评估示例",
+      "type": "contains"
+    }
+  ]
+}
