@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI时代工程师能力评估主程序
+AI工程师能力评估主程序
 支持L1-L13级别的多维能力评估
 """
 
@@ -150,7 +150,7 @@ def main():
     """主函数"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='AI时代工程师能力评估系统')
+    parser = argparse.ArgumentParser(description='AI工程师能力评估系统')
     parser.add_argument('--level', required=True, 
                        choices=['L1', 'L4', 'L7', 'L10'],
                        help='评估级别')
@@ -181,7 +181,7 @@ def main():
     )
     
     # 打印结果
-    print("=== AI时代工程师能力评估结果 ===")
+    print("=== AI工程师能力评估结果 ===")
     print(f"候选人: {args.candidate}")
     print(f"级别: {args.level}")
     print(f"业务领域: {args.domain}")

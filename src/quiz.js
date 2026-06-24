@@ -43,7 +43,7 @@ function loadConfig() {
 function printHeader() {
   console.clear();
   console.log(chalk.bold.cyan('\n╔══════════════════════════════════════════════════════╗'));
-  console.log(chalk.bold.cyan('║       AI时代工程师能力评估 - 在线作答系统            ║'));
+  console.log(chalk.bold.cyan('║       AI工程师能力评估 - 在线作答系统            ║'));
   console.log(chalk.bold.cyan('╚══════════════════════════════════════════════════════╝'));
   console.log();
 }
@@ -150,7 +150,7 @@ async function main() {
 
   printHeader();
 
-  console.log(chalk.bold('📋 欢迎参加AI时代工程师能力评估'));
+  console.log(chalk.bold('📋 欢迎参加AI工程师能力评估'));
   console.log();
   console.log(chalk.gray('本次评估将考察以下三个维度:'));
   for (const d of config.assessment.dimensions) {

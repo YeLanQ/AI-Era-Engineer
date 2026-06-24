@@ -529,7 +529,7 @@ function main() {
   });
 
   server.listen(PORT, () => {
-    console.log(`\n  🌐 AI时代工程师能力评估 - Web答题系统`);
+    console.log(`\n  🌐 AI工程师能力评估 - Web答题系统`);
     console.log(`  ─────────────────────────────────────`);
     console.log(`  地址: http://localhost:${PORT}`);
     console.log(`  答题: http://localhost:${PORT}/`);

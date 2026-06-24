@@ -1,7 +1,7 @@
 {
   "name": "engineer-assessor-report",
   "version": "1.0.0",
-  "description": "AI时代工程师能力评估报告生成器",
+  "description": "AI工程师能力评估报告生成器",
   "private": true,
   "type": "module",
   "scripts": {
