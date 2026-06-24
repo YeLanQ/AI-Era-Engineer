@@ -182,9 +182,14 @@ async function handleAPI(req, res) {
   if (path === '/api/report' && req.method === 'POST') {
     try {
       const body = await parseBody(req);
+      const savedPath = join(DATA_DIR, `${body.candidate || 'Unknown'}_assessment.json`);
+      const reportData = existsSync(savedPath)
+        ? JSON.parse(readFileSync(savedPath, 'utf-8'))
+        : body;
+
       const templatePath = join(__dirname, 'template.html');
       const template = readFileSync(templatePath, 'utf-8');
-      const html = fillReportTemplate(template, body);
+      const html = fillReportTemplate(template, reportData);
 
       const safeName = encodeURIComponent(`工程师能力评估_${body.candidate}_${body.date}.html`);
       res.writeHead(200, {
