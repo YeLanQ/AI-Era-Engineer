@@ -6,6 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const QUESTIONS_DIR = join(__dirname, '..', 'questions');
+const QUESTIONS_DATA_DIR = join(QUESTIONS_DIR, 'data');
 
 let cachedDomains = null;
 let cachedQuestions = {};
@@ -30,7 +31,7 @@ export function loadDomains() {
 export function loadQuestions(domain, level, count = 3) {
   const cacheKey = `${domain}:${level}`;
   if (!cachedQuestions[cacheKey]) {
-    const filePath = join(QUESTIONS_DIR, `${domain}.json`);
+    const filePath = join(QUESTIONS_DATA_DIR, `${domain}.json`);
     if (!existsSync(filePath)) return [];
 
     const all = JSON.parse(readFileSync(filePath, 'utf-8'));
