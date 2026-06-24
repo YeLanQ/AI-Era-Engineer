@@ -906,6 +906,17 @@ const LABELS = {
   en: ['Cognition', 'Synergy', 'Engineering'],
 };
 
+function getCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return r + ',' + g + ',' + b;
+}
+
 function renderRadarChart(radarData) {
   const canvas = document.getElementById('radar-chart');
   if (canvas.parentElement.offsetWidth === 0) {
@@ -914,6 +925,8 @@ function renderRadarChart(radarData) {
   }
   const ctx = canvas.getContext('2d');
   if (state.radarChart) { state.radarChart.destroy(); state.radarChart = null; }
+  const primary = getCssVar('--primary');
+  const primaryRgb = hexToRgb(primary);
   state.radarChart = new Chart(ctx, {
     type: 'radar',
     data: {
@@ -921,11 +934,11 @@ function renderRadarChart(radarData) {
       datasets: [{
         label: state.name,
         data: [radarData.Cognition, radarData.Synergy, radarData.Engineering],
-        backgroundColor: 'rgba(79,70,229,0.12)',
-        borderColor: '#4f46e5',
+        backgroundColor: 'rgba(' + primaryRgb + ',0.12)',
+        borderColor: primary,
         borderWidth: 2,
-        pointBackgroundColor: '#4f46e5',
-        pointBorderColor: '#fff',
+        pointBackgroundColor: primary,
+        pointBorderColor: getCssVar('--card'),
         pointBorderWidth: 2,
         pointRadius: 5,
       }]
@@ -937,8 +950,22 @@ function renderRadarChart(radarData) {
         r: {
           beginAtZero: true,
           max: 5,
-          ticks: { stepSize: 1, font: { size: 10 } },
-          pointLabels: { font: { size: 12, weight: 'bold' } },
+          grid: {
+            color: getCssVar('--border'),
+          },
+          angleLines: {
+            color: getCssVar('--border'),
+          },
+          ticks: {
+            stepSize: 1,
+            font: { size: 10 },
+            color: getCssVar('--text-secondary'),
+            backdropColor: 'transparent',
+          },
+          pointLabels: {
+            font: { size: state.lang === 'en' ? 10 : 12, weight: 'bold' },
+            color: getCssVar('--text'),
+          },
         }
       },
       plugins: {
@@ -1269,7 +1296,12 @@ document.getElementById('lang-toggle').addEventListener('click', () => {
   setTheme(getSaved());
   var mq = window.matchMedia('(prefers-color-scheme: dark)');
   mq.addEventListener('change', function() {
-    if (getSaved() === 'system') document.documentElement.removeAttribute('data-theme');
+    if (getSaved() === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+      if (typeof state !== 'undefined' && state.radarChart && state.result && state.result.radarData) {
+        renderRadarChart(state.result.radarData);
+      }
+    }
   });
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('#btn-theme');
@@ -1278,6 +1310,17 @@ document.getElementById('lang-toggle').addEventListener('click', () => {
     var cur = getSaved();
     setTheme(themes[(themes.indexOf(cur) + 1) % themes.length]);
   });
+})();
+
+// Re-render radar chart on theme change
+(function() {
+  var target = document.documentElement;
+  var observer = new MutationObserver(function() {
+    if (state.radarChart && state.result && state.result.radarData) {
+      renderRadarChart(state.result.radarData);
+    }
+  });
+  observer.observe(target, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 
 // Init
