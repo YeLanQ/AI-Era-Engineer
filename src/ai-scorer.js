@@ -92,7 +92,7 @@ function getAIConfig() {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
     apiEndpoint: endpoint,
     temperature: aiSection.temperature ?? 0.3,
-    maxTokens: aiSection.max_tokens || 4096,
+    maxTokens: aiSection.max_tokens || 16384,
   };
 }
 

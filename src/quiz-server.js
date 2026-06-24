@@ -318,7 +318,7 @@ async function handleAPI(req, res) {
   // GET /api/assessments/:id
   const detailMatch = path.match(/^\/api\/assessments\/(.+?)$/);
   if (detailMatch && req.method === 'GET') {
-    const id = detailMatch[1];
+    const id = decodeURIComponent(detailMatch[1]);
     const filePath = join(DATA_DIR, `${id}.json`);
     if (!existsSync(filePath)) {
       sendError(res, 404, 'Assessment not found');
@@ -334,8 +334,9 @@ async function handleAPI(req, res) {
   }
 
   // PUT /api/assessments/:id/review
-  if (detailMatch && req.method === 'PUT' && path.endsWith('/review')) {
-    const id = detailMatch[1];
+  const reviewMatch = path.match(/^\/api\/assessments\/(.+?)\/review$/);
+  if (reviewMatch && req.method === 'PUT') {
+    const id = decodeURIComponent(reviewMatch[1]);
     const filePath = join(DATA_DIR, `${id}.json`);
     if (!existsSync(filePath)) {
       sendError(res, 404, 'Assessment not found');

@@ -176,6 +176,12 @@ scoring:
         - "问题拆解完整" # 分数
         - "问题拆解基本完整" # 分数
         - "问题拆解不完整" # 分数
+# AI评分配置
+ai_scoring:
+  enabled: true
+  temperature: 0.3
+  max_tokens: 16384
+
 # 输出配置
 output:
   # 支持的报告格式
