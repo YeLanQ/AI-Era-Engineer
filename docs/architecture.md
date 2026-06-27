@@ -75,7 +75,7 @@ AI 工程师能力评估系统，通过答题评估工程师在 **认知拆解 (
 4. **题库管理** — `question-bank.html` 通过 REST API 对数据库进行增删改查
 5. **答题收集** — CLI (`quiz.js`) 或 Web (`quiz-server.js` + `quiz.html`) 收集用户答案
 6. **评分** — 规则评分 (`scorer.js`) 或 AI 评分 (`ai-scorer.js`) 计算各维度得分
-7. **存储** — 评估结果保存为 `data/{候选人}_assessment.json`
+7. **存储** — 评估结果保存为 `.cache/data/{候选人}_assessment.json`
 8. **报告** — `generate-report.js` 使用 `template.html` 生成可视化 HTML 报告
 
 ## 三种访问模式

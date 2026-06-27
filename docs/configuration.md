@@ -52,7 +52,7 @@ ai_scoring:
 
 output:
   formats: [pdf, html, json, excel]
-  dir: ./reports
+  dir: ./.cache/reports
 
 logging:
   level: debug

@@ -13,7 +13,7 @@
 pnpm generate:sample
 
 # 从已有 JSON 生成
-pnpm generate:from-json --input data/xxx_assessment.json
+pnpm generate:from-json --input .cache/data/xxx_assessment.json
 
 # 生成后自动打开浏览器
 pnpm dev
