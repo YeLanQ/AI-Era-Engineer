@@ -687,13 +687,8 @@ async function main() {
   });
 
   server.listen(PORT, () => {
-    console.log(`\n  🌐 AI工程师能力评估 - Web答题系统`);
-    console.log(`  ─────────────────────────────────────`);
-    console.log(`  地址: http://localhost:${PORT}`);
-    console.log(`  答题: http://localhost:${PORT}/`);
-    console.log(`  审核: http://localhost:${PORT}/review.html`);
-    console.log(`  题库管理: http://localhost:${PORT}/question-bank.html`);
-    console.log(`  按 Ctrl+C 停止服务器\n`);
+    console.log(`\n  🌐 AI工程师能力评估`);
+    console.log(`  http://localhost:${PORT}\n`);
   });
 }
 
