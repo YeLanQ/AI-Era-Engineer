@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>题库管理 - AI工程师能力评估</title>
+<link rel="stylesheet" href="/theme.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+.header {
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-radius: var(--radius);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header h1 { font-size: 20px; font-weight: 700; }
+.header .subtitle { font-size: 13px; opacity: .85; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-secondary { background: var(--bg-secondary); color: var(--text); }
+.btn-secondary:hover { background: var(--border); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-xs { padding: 3px 10px; font-size: 11px; }
+.btn-block { width: 100%; }
+
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--text); }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .2s;
+  background: var(--card);
+  color: var(--text);
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+.layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+.domain-item {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.domain-item:hover { border-color: var(--primary); background: var(--primary-light); }
+.domain-item.active { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 2px rgba(79,70,229,.15); }
+.domain-item .d-name { font-weight: 600; font-size: 14px; }
+.domain-item .d-code { font-size: 11px; color: var(--text-secondary); }
+.domain-item .d-count { font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; }
+.domain-actions { display: flex; gap: 4px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+tr:hover td { background: var(--bg-subtle); }
+
+.q-title-col { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-meta { font-size: 11px; color: var(--text-secondary); }
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-right: 3px;
+}
+.tag-dim { background: var(--tag-dimension-bg); color: var(--tag-dimension-text); }
+.tag-diff { background: var(--tag-difficulty-bg); color: var(--tag-difficulty-text); }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+.empty-state h3 { font-size: 16px; margin-bottom: 8px; }
+.empty-state p { font-size: 13px; }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 640px;
+  width: 92%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 { font-size: 18px; margin-bottom: 16px; color: var(--text); }
+.modal .btn-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+.dim-checkboxes { display: flex; gap: 12px; flex-wrap: wrap; }
+.dim-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .2s;
+  user-select: none;
+}
+.dim-checkbox:hover { border-color: var(--primary); }
+.dim-checkbox.checked {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+.dim-checkbox input { display: none; }
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.toast.show { opacity: 1; }
+.toast-success { background: var(--success); }
+.toast-error { background: var(--danger); }
+.toast-info { background: var(--primary); }
+
+.search-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-bar select, .search-bar input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--card);
+  color: var(--text);
+}
+.search-bar select:focus, .search-bar input:focus { outline: none; border-color: var(--primary); }
+
+.loading {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--loading-track);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>题库管理</h1>
+      <div class="subtitle">Question Bank Manager — 增删改查题库与领域</div>
+      <div style="margin-top:6px;display:flex;gap:8px;">
+        <a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;padding:4px 10px;font-size:11px;">← 答题系统</a>
+        <a href="/review.html" class="btn btn-secondary btn-sm" style="text-decoration:none;padding:4px 10px;font-size:11px;">人工审核</a>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle" id="btn-theme" title="切换主题" type="button">
+        <svg class="ti-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="ti-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Left: Domains -->
+    <div>
+      <div class="card">
+        <div class="flex-between mb-16">
+          <h2 style="border:none;margin:0;padding:0;">业务领域</h2>
+          <button class="btn btn-primary btn-sm" onclick="openDomainModal()">+ 新建</button>
+        </div>
+        <div id="domain-list">
+          <div class="empty-state"><p>加载中...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Questions -->
+    <div>
+      <div class="card">
+        <div class="flex-between mb-16">
+          <h2 style="border:none;margin:0;padding:0;" id="question-section-title">题目列表</h2>
+          <button class="btn btn-primary btn-sm" id="btn-add-question" onclick="openQuestionModal()" disabled>+ 新建题目</button>
+        </div>
+
+        <div class="search-bar" id="question-filters">
+          <select id="filter-level" onchange="loadQuestions()">
+            <option value="">全部等级</option>
+            <option value="L1">L1 - 入门者</option>
+            <option value="L4">L4 - 协同执行者</option>
+            <option value="L7">L7 - 系统整合者</option>
+            <option value="L10">L10 - 架构决策者</option>
+          </select>
+          <input type="text" id="filter-search" placeholder="搜索题目..." oninput="loadQuestions()" style="flex:1;min-width:120px;" />
+          <span id="question-count" style="font-size:12px;color:var(--text-secondary);align-self:center;"></span>
+        </div>
+
+        <div class="table-wrap" id="question-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>题目</th>
+                <th>等级</th>
+                <th>难度</th>
+                <th>维度</th>
+                <th>时限</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="question-list">
+              <tr><td colspan="7" class="empty-state"><p>请选择一个领域查看题目</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Domain Modal -->
+<div class="modal-overlay" id="modal-domain">
+  <div class="modal">
+    <h3 id="domain-modal-title">新建领域</h3>
+    <div class="form-group">
+      <label>领域编码 (code) <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="domain-code" placeholder="如: 电商、金融科技" />
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">编码用于题目关联，创建后不可修改</div>
+    </div>
+    <div class="form-group">
+      <label>显示名称 (name) <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="domain-name" placeholder="如: 电商" />
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <input type="text" id="domain-desc" placeholder="领域简要描述" />
+    </div>
+    <div class="form-group">
+      <label>场景描述</label>
+      <textarea id="domain-scenario" placeholder="该领域下评估的场景描述..."></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="closeModal('modal-domain')">取消</button>
+      <button class="btn btn-primary" id="btn-domain-save" onclick="saveDomain()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Question Modal -->
+<div class="modal-overlay" id="modal-question">
+  <div class="modal">
+    <h3 id="question-modal-title">新建题目</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>题目 ID</label>
+        <input type="text" id="q-id" placeholder="自动生成" />
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">留空自动生成</div>
+      </div>
+      <div class="form-group">
+        <label>等级 <span style="color:var(--danger)">*</span></label>
+        <select id="q-level">
+          <option value="L1">L1 - 入门者</option>
+          <option value="L4">L4 - 协同执行者</option>
+          <option value="L7">L7 - 系统整合者</option>
+          <option value="L10">L10 - 架构决策者</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>题目 <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="q-title" placeholder="题目标题" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>难度</label>
+        <select id="q-difficulty">
+          <option value="入门">入门</option>
+          <option value="中级">中级</option>
+          <option value="高级">高级</option>
+          <option value="专家">专家</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>建议用时 (分钟)</label>
+        <input type="number" id="q-time" value="60" min="5" max="480" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>评估维度</label>
+      <div class="dim-checkboxes">
+        <label class="dim-checkbox" data-dim="C">
+          <input type="checkbox" value="C" /> 认知拆解 (C)
+        </label>
+        <label class="dim-checkbox" data-dim="H">
+          <input type="checkbox" value="H" /> 人机协同 (H)
+        </label>
+        <label class="dim-checkbox" data-dim="E">
+          <input type="checkbox" value="E" /> 工程架构 (E)
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>允许使用 AI</label>
+      <select id="q-ai-allowed">
+        <option value="1">是</option>
+        <option value="0">否</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>题目描述</label>
+      <textarea id="q-description" placeholder="详细描述题目内容..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>提示要点（每行一个）</label>
+      <textarea id="q-hints" placeholder="关注边界条件&#10;确保异常处理完整&#10;..." style="min-height:60px;"></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="closeModal('modal-question')">取消</button>
+      <button class="btn btn-primary" id="btn-question-save" onclick="saveQuestion()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:400px;text-align:center;">
+    <h3 id="confirm-title">确认删除</h3>
+    <p id="confirm-message" style="color:var(--text-secondary);margin:12px 0 20px;font-size:14px;"></p>
+    <div class="btn-group" style="justify-content:center;">
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">取消</button>
+      <button class="btn btn-danger" id="btn-confirm-delete" onclick="executeDelete()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── State ── */
+let domains = [];
+let currentDomain = null;
+let questions = [];
+let deleteTarget = null;
+const DIM_NAMES = { C: '认知拆解', H: '人机协同', E: '工程架构' };
+
+/* ── API ── */
+async function api(url, opts) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || res.statusText);
+  }
+  return res.json();
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast toast-' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── Domains ── */
+async function loadDomains() {
+  try {
+    domains = await api('/api/questions-bank/domains');
+    renderDomains();
+  } catch (e) {
+    document.getElementById('domain-list').innerHTML =
+      '<div class="empty-state"><p>加载失败: ' + e.message + '</p></div>';
+  }
+}
+
+function renderDomains() {
+  const container = document.getElementById('domain-list');
+  if (domains.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>暂无领域</h3><p>点击上方按钮新建业务领域</p></div>';
+    return;
+  }
+  container.innerHTML = domains.map(d => {
+    const active = currentDomain && currentDomain.code === d.code ? ' active' : '';
+    return `<div class="domain-item${active}" onclick="selectDomain('${d.code}')">
+      <div>
+        <div class="d-name">${escHtml(d.name)}</div>
+        <div class="d-code">${escHtml(d.code)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="d-count" id="count-${d.code}">?</span>
+        <div class="domain-actions">
+          <button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();openDomainModal('${d.code}')">编辑</button>
+          <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();confirmDeleteDomain('${d.code}')">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Load question counts
+  for (const d of domains) {
+    api('/api/questions-bank/questions?domain=' + encodeURIComponent(d.code))
+      .then(qs => {
+        const el = document.getElementById('count-' + d.code);
+        if (el) el.textContent = qs.length + '题';
+      })
+      .catch(() => {});
+  }
+}
+
+function selectDomain(code) {
+  currentDomain = domains.find(d => d.code === code) || null;
+  renderDomains();
+  document.getElementById('btn-add-question').disabled = !currentDomain;
+  document.getElementById('question-section-title').textContent =
+    currentDomain ? currentDomain.name + ' - 题目列表' : '题目列表';
+  document.getElementById('filter-level').value = '';
+  document.getElementById('filter-search').value = '';
+  loadQuestions();
+}
+
+/* ── Questions ── */
+async function loadQuestions() {
+  if (!currentDomain) {
+    document.getElementById('question-list').innerHTML =
+      '<tr><td colspan="7" class="empty-state"><p>请选择一个领域查看题目</p></td></tr>';
+    document.getElementById('question-count').textContent = '';
+    return;
+  }
+
+  let url = '/api/questions-bank/questions?domain=' + encodeURIComponent(currentDomain.code);
+  const level = document.getElementById('filter-level').value;
+  if (level) url += '&level=' + level;
+
+  try {
+    let qs = await api(url);
+    const search = document.getElementById('filter-search').value.trim().toLowerCase();
+    if (search) {
+      qs = qs.filter(q => q.title.toLowerCase().includes(search) || q.id.toLowerCase().includes(search));
+    }
+    questions = qs;
+    renderQuestions();
+  } catch (e) {
+    document.getElementById('question-list').innerHTML =
+      '<tr><td colspan="7" class="empty-state"><p>加载失败: ' + e.message + '</p></td></tr>';
+  }
+}
+
+function renderQuestions() {
+  const tbody = document.getElementById('question-list');
+  document.getElementById('question-count').textContent = '共 ' + questions.length + ' 题';
+
+  if (questions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>暂无题目，点击上方按钮新建</p></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = questions.map(q => {
+    const dimTags = (q.dimensions || []).map(d =>
+      '<span class="tag tag-dim">' + (DIM_NAMES[d] || d) + '</span>'
+    ).join('');
+    return `<tr>
+      <td style="font-size:11px;color:var(--text-secondary);font-family:monospace;">${escHtml(q.id)}</td>
+      <td class="q-title-col" title="${escHtml(q.title)}">${escHtml(q.title)}</td>
+      <td><span class="q-meta">${escHtml(q.level)}</span></td>
+      <td><span class="tag tag-diff">${escHtml(q.difficulty)}</span></td>
+      <td>${dimTags || '<span class="q-meta">未设置</span>'}</td>
+      <td><span class="q-meta">${q.time_limit}min</span></td>
+      <td>
+        <button class="btn btn-secondary btn-xs" onclick="openQuestionModal('${q.id}')">编辑</button>
+        <button class="btn btn-danger btn-xs" onclick="confirmDeleteQuestion('${q.id}')">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Domain Modal ── */
+let editingDomainCode = null;
+
+function openDomainModal(code) {
+  editingDomainCode = code || null;
+  document.getElementById('domain-modal-title').textContent = code ? '编辑领域' : '新建领域';
+
+  const isReadonly = !!code;
+  document.getElementById('domain-code').readOnly = isReadonly;
+  document.getElementById('domain-code').style.opacity = isReadonly ? '.6' : '1';
+
+  if (code) {
+    const d = domains.find(x => x.code === code);
+    document.getElementById('domain-code').value = d ? d.code : '';
+    document.getElementById('domain-name').value = d ? d.name : '';
+    document.getElementById('domain-desc').value = d ? d.description : '';
+    document.getElementById('domain-scenario').value = d ? d.scenario : '';
+  } else {
+    document.getElementById('domain-code').value = '';
+    document.getElementById('domain-name').value = '';
+    document.getElementById('domain-desc').value = '';
+    document.getElementById('domain-scenario').value = '';
+  }
+
+  document.getElementById('modal-domain').classList.add('show');
+}
+
+async function saveDomain() {
+  const code = document.getElementById('domain-code').value.trim();
+  const name = document.getElementById('domain-name').value.trim();
+  if (!code || !name) {
+    showToast('请填写编码和名称', 'error');
+    return;
+  }
+
+  const data = {
+    code,
+    name,
+    description: document.getElementById('domain-desc').value.trim(),
+    scenario: document.getElementById('domain-scenario').value.trim(),
+  };
+
+  try {
+    if (editingDomainCode) {
+      await api('/api/questions-bank/domains/' + encodeURIComponent(editingDomainCode), {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      showToast('领域已更新', 'success');
+    } else {
+      await api('/api/questions-bank/domains', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      showToast('领域已创建', 'success');
+    }
+    closeModal('modal-domain');
+    await loadDomains();
+  } catch (e) {
+    showToast('操作失败: ' + e.message, 'error');
+  }
+}
+
+/* ── Question Modal ── */
+let editingQuestionId = null;
+
+function openQuestionModal(id) {
+  editingQuestionId = id || null;
+  document.getElementById('question-modal-title').textContent = id ? '编辑题目' : '新建题目';
+  document.getElementById('btn-question-save').textContent = '保存';
+
+  if (id) {
+    const q = questions.find(x => x.id === id);
+    if (!q) return;
+    document.getElementById('q-id').value = q.id;
+    document.getElementById('q-id').readOnly = true;
+    document.getElementById('q-id').style.opacity = '.6';
+    document.getElementById('q-level').value = q.level;
+    document.getElementById('q-title').value = q.title;
+    document.getElementById('q-difficulty').value = q.difficulty;
+    document.getElementById('q-time').value = q.time_limit;
+    document.getElementById('q-ai-allowed').value = q.ai_allowed ? '1' : '0';
+    document.getElementById('q-description').value = q.description;
+
+    // Dimensions
+    document.querySelectorAll('.dim-checkbox').forEach(el => {
+      const val = el.querySelector('input').value;
+      el.classList.toggle('checked', (q.dimensions || []).includes(val));
+      el.querySelector('input').checked = (q.dimensions || []).includes(val);
+    });
+
+    // Hints
+    document.getElementById('q-hints').value = (q.hints || []).join('\n');
+  } else {
+    document.getElementById('q-id').value = '';
+    document.getElementById('q-id').readOnly = false;
+    document.getElementById('q-id').style.opacity = '1';
+    document.getElementById('q-level').value = 'L1';
+    document.getElementById('q-title').value = '';
+    document.getElementById('q-difficulty').value = '入门';
+    document.getElementById('q-time').value = '60';
+    document.getElementById('q-ai-allowed').value = '1';
+    document.getElementById('q-description').value = '';
+    document.getElementById('q-hints').value = '';
+    document.querySelectorAll('.dim-checkbox').forEach(el => {
+      el.classList.remove('checked');
+      el.querySelector('input').checked = false;
+    });
+  }
+
+  document.getElementById('modal-question').classList.add('show');
+}
+
+async function saveQuestion() {
+  const title = document.getElementById('q-title').value.trim();
+  const level = document.getElementById('q-level').value;
+  if (!title) {
+    showToast('请填写题目', 'error');
+    return;
+  }
+  if (!currentDomain) {
+    showToast('请先选择领域', 'error');
+    return;
+  }
+
+  const dimensions = [];
+  document.querySelectorAll('.dim-checkbox input:checked').forEach(el => {
+    dimensions.push(el.value);
+  });
+
+  const hints = document.getElementById('q-hints').value
+    .split('\n').map(s => s.trim()).filter(Boolean);
+
+  const data = {
+    domain_code: currentDomain.code,
+    level,
+    title,
+    difficulty: document.getElementById('q-difficulty').value,
+    ai_allowed: document.getElementById('q-ai-allowed').value === '1',
+    time_limit: parseInt(document.getElementById('q-time').value) || 60,
+    description: document.getElementById('q-description').value.trim(),
+    dimensions,
+    hints,
+  };
+
+  if (editingQuestionId) {
+    data.id = editingQuestionId;
+  } else {
+    const customId = document.getElementById('q-id').value.trim();
+    if (customId) data.id = customId;
+  }
+
+  try {
+    if (editingQuestionId) {
+      await api('/api/questions-bank/questions/' + encodeURIComponent(editingQuestionId), {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      showToast('题目已更新', 'success');
+    } else {
+      await api('/api/questions-bank/questions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      showToast('题目已创建', 'success');
+    }
+    closeModal('modal-question');
+    await loadDomains();
+    await loadQuestions();
+  } catch (e) {
+    showToast('操作失败: ' + e.message, 'error');
+  }
+}
+
+/* ── Delete ── */
+function confirmDeleteDomain(code) {
+  deleteTarget = { type: 'domain', code };
+  document.getElementById('confirm-title').textContent = '删除领域';
+  const d = domains.find(x => x.code === code);
+  document.getElementById('confirm-message').textContent =
+    '确定要删除领域 "' + (d ? d.name : code) + '" 吗？该领域下的所有题目也将被删除，此操作不可恢复。';
+  document.getElementById('modal-confirm').classList.add('show');
+}
+
+function confirmDeleteQuestion(id) {
+  deleteTarget = { type: 'question', id };
+  const q = questions.find(x => x.id === id);
+  document.getElementById('confirm-title').textContent = '删除题目';
+  document.getElementById('confirm-message').textContent =
+    '确定要删除题目 "' + (q ? q.title : id) + '" 吗？此操作不可恢复。';
+  document.getElementById('modal-confirm').classList.add('show');
+}
+
+async function executeDelete() {
+  if (!deleteTarget) return;
+  try {
+    if (deleteTarget.type === 'domain') {
+      await api('/api/questions-bank/domains/' + encodeURIComponent(deleteTarget.code), { method: 'DELETE' });
+      showToast('领域已删除', 'success');
+      if (currentDomain && currentDomain.code === deleteTarget.code) {
+        currentDomain = null;
+        document.getElementById('btn-add-question').disabled = true;
+        document.getElementById('question-section-title').textContent = '题目列表';
+        document.getElementById('question-list').innerHTML =
+          '<tr><td colspan="7" class="empty-state"><p>请选择一个领域查看题目</p></td></tr>';
+      }
+      await loadDomains();
+    } else {
+      await api('/api/questions-bank/questions/' + encodeURIComponent(deleteTarget.id), { method: 'DELETE' });
+      showToast('题目已删除', 'success');
+      await loadDomains();
+      await loadQuestions();
+    }
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
+  closeModal('modal-confirm');
+  deleteTarget = null;
+}
+
+/* ── UI Helpers ── */
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Dimension checkbox toggle
+document.addEventListener('click', function(e) {
+  const cb = e.target.closest('.dim-checkbox');
+  if (!cb) return;
+  const input = cb.querySelector('input');
+  input.checked = !input.checked;
+  cb.classList.toggle('checked', input.checked);
+});
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('show');
+  });
+});
+
+/* ── Theme ── */
+(function() {
+  var KEY = 'td-theme';
+  function getSaved() { return localStorage.getItem(KEY) || 'system'; }
+  function setTheme(t) {
+    if (t === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem(KEY, t);
+    var btn = document.getElementById('btn-theme');
+    if (!btn) return;
+    var sun = btn.querySelector('.ti-sun');
+    var moon = btn.querySelector('.ti-moon');
+    if (sun) sun.style.display = t === 'dark' ? 'none' : '';
+    if (moon) moon.style.display = t === 'dark' ? '' : 'none';
+  }
+  setTheme(getSaved());
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#btn-theme');
+    if (!btn) return;
+    var themes = ['light', 'dark', 'system'];
+    var cur = getSaved();
+    setTheme(themes[(themes.indexOf(cur) + 1) % themes.length]);
+  });
+})();
+
+/* ── Init ── */
+loadDomains();
+</script>
+</body>
+</html>

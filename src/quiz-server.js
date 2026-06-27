@@ -6,6 +6,8 @@ import { loadSkillConfig } from './load-skill-config.js';
 import { loadQuestions, loadDomains } from './load-question-bank.js';
 import { assess, toRadarData } from './scorer.js';
 import { assessWithAI, getAvailableProviders } from './ai-scorer.js';
+import { initDB, seedFromJSON, isSeeded, getDomains as dbGetDomains, getDomain, createDomain, updateDomain, deleteDomain,
+  getQuestions as dbGetQuestions, getQuestion, createQuestion, updateQuestion, deleteQuestion, getNextQuestionId } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -131,6 +133,7 @@ async function handleAPI(req, res) {
     sendJSON(res, 200, {
       levels: LEVELS,
       domains: domainConfigs.map(d => d.name),
+      domainObjects: domainConfigs,
       dimensions: config.assessment.dimensions,
       passingScore: config.assessment.rules.passing_score,
       dimensionDescriptions: DIMENSION_DESCRIPTIONS,
@@ -392,6 +395,153 @@ async function handleAPI(req, res) {
     return;
   }
 
+  // ──────────────────────────────────────────────────
+  // Question Bank Management API
+  // ──────────────────────────────────────────────────
+
+  // GET /api/questions-bank/domains
+  if (path === '/api/questions-bank/domains' && req.method === 'GET') {
+    sendJSON(res, 200, dbGetDomains());
+    return;
+  }
+
+  // POST /api/questions-bank/domains
+  if (path === '/api/questions-bank/domains' && req.method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      if (!body.code || !body.name) {
+        sendError(res, 400, 'code and name are required');
+        return;
+      }
+      const existing = getDomain(body.code);
+      if (existing) {
+        sendError(res, 409, 'Domain code already exists');
+        return;
+      }
+      const domain = createDomain(body);
+      // Clear question cache so domains reload
+      const { clearQuestionCache } = await import('./load-question-bank.js');
+      clearQuestionCache();
+      sendJSON(res, 201, domain);
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
+  // PUT /api/questions-bank/domains/:code
+  const domainUpdateMatch = path.match(/^\/api\/questions-bank\/domains\/(.+)$/);
+  if (domainUpdateMatch && req.method === 'PUT') {
+    try {
+      const code = decodeURIComponent(domainUpdateMatch[1]);
+      const existing = getDomain(code);
+      if (!existing) {
+        sendError(res, 404, 'Domain not found');
+        return;
+      }
+      const body = await parseBody(req);
+      const domain = updateDomain(code, body);
+      const { clearQuestionCache } = await import('./load-question-bank.js');
+      clearQuestionCache();
+      sendJSON(res, 200, domain);
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
+  // DELETE /api/questions-bank/domains/:code
+  if (domainUpdateMatch && req.method === 'DELETE') {
+    try {
+      const code = decodeURIComponent(domainUpdateMatch[1]);
+      const existing = getDomain(code);
+      if (!existing) {
+        sendError(res, 404, 'Domain not found');
+        return;
+      }
+      deleteDomain(code);
+      const { clearQuestionCache } = await import('./load-question-bank.js');
+      clearQuestionCache();
+      sendJSON(res, 200, { message: 'Domain deleted' });
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
+  // GET /api/questions-bank/questions?domain=xxx&level=xxx
+  if (path === '/api/questions-bank/questions' && req.method === 'GET') {
+    const domain = url.searchParams.get('domain') || undefined;
+    const level = url.searchParams.get('level') || undefined;
+    const questions = dbGetQuestions({ domain, level });
+    sendJSON(res, 200, questions);
+    return;
+  }
+
+  // POST /api/questions-bank/questions
+  if (path === '/api/questions-bank/questions' && req.method === 'POST') {
+    try {
+      const body = await parseBody(req);
+      if (!body.domain_code || !body.level || !body.title) {
+        sendError(res, 400, 'domain_code, level and title are required');
+        return;
+      }
+      const nextId = body.id || getNextQuestionId(body.domain_code, body.level);
+      const existing = getQuestion(nextId);
+      if (existing) {
+        sendError(res, 409, 'Question ID already exists: ' + nextId);
+        return;
+      }
+      const question = createQuestion({ id: nextId, ...body });
+      const { clearQuestionCache } = await import('./load-question-bank.js');
+      clearQuestionCache();
+      sendJSON(res, 201, question);
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
+  // PUT /api/questions-bank/questions/:id
+  const questionUpdateMatch = path.match(/^\/api\/questions-bank\/questions\/(.+)$/);
+  if (questionUpdateMatch && req.method === 'PUT') {
+    try {
+      const id = decodeURIComponent(questionUpdateMatch[1]);
+      const existing = getQuestion(id);
+      if (!existing) {
+        sendError(res, 404, 'Question not found');
+        return;
+      }
+      const body = await parseBody(req);
+      const question = updateQuestion(id, body);
+      const { clearQuestionCache } = await import('./load-question-bank.js');
+      clearQuestionCache();
+      sendJSON(res, 200, question);
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
+  // DELETE /api/questions-bank/questions/:id
+  if (questionUpdateMatch && req.method === 'DELETE') {
+    try {
+      const id = decodeURIComponent(questionUpdateMatch[1]);
+      const existing = getQuestion(id);
+      if (!existing) {
+        sendError(res, 404, 'Question not found');
+        return;
+      }
+      deleteQuestion(id);
+      const { clearQuestionCache } = await import('./load-question-bank.js');
+      clearQuestionCache();
+      sendJSON(res, 200, { message: 'Question deleted' });
+    } catch (e) {
+      sendError(res, 500, e.message);
+    }
+    return;
+  }
+
   sendError(res, 404, 'Not Found');
 }
 
@@ -509,7 +659,15 @@ function fillReportTemplate(template, data) {
   return html;
 }
 
-function main() {
+async function main() {
+  // Initialize persistent database
+  await initDB();
+  if (!isSeeded()) {
+    console.log('  📦 首次启动，正在从 JSON 迁移题库到数据库...');
+    seedFromJSON();
+    console.log('  ✅ 题库迁移完成');
+  }
+
   const server = http.createServer(async (req, res) => {
     try {
       if (req.url.startsWith('/api/')) {
@@ -534,6 +692,7 @@ function main() {
     console.log(`  地址: http://localhost:${PORT}`);
     console.log(`  答题: http://localhost:${PORT}/`);
     console.log(`  审核: http://localhost:${PORT}/review.html`);
+    console.log(`  题库管理: http://localhost:${PORT}/question-bank.html`);
     console.log(`  按 Ctrl+C 停止服务器\n`);
   });
 }

@@ -1,4 +1,7 @@
 node_modules/
 data/*.json
-reports/*.html
+data/question-bank.db
+reports/
 .env
+task/
+.cache/
