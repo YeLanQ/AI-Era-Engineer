@@ -269,7 +269,7 @@ export async function runDemo() {
   const domains = ['电商', '金融科技'];
   const names = ['张三', '李四'];
 
-  const reportDir = join(__dirname, '..', 'data');
+  const reportDir = join(__dirname, '..', '.cache', 'data');
   ensureDir(reportDir);
 
   for (let i = 0; i < levels.length; i++) {

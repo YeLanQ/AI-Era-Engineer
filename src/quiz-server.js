@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PORT = 3000;
-const DATA_DIR = join(__dirname, '..', 'data');
+const DATA_DIR = join(__dirname, '..', '.cache', 'data');
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',

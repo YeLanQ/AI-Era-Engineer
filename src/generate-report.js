@@ -137,7 +137,7 @@ function main() {
   const template = loadTemplate();
   const html = fillTemplate(template, data);
 
-  const reportsDir = join(__dirname, '..', 'reports');
+  const reportsDir = join(__dirname, '..', '.cache', 'reports');
   ensureDir(reportsDir);
 
   const filename = data.level

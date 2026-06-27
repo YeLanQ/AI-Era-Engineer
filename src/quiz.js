@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 
-const ASSESSMENT_DATA_DIR = join(__dirname, '..', 'data');
+const ASSESSMENT_DATA_DIR = join(__dirname, '..', '.cache', 'data');
 
 const QUESTIONS_PER_LEVEL = 3;
 
