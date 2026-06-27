@@ -93,12 +93,70 @@ Web 服务器 `src/quiz-server.js` 提供以下 REST API，前端由 `quiz.html`
 }
 ```
 
+### `GET /api/questions-bank/domains`
+
+返回所有领域。
+
+```json
+[
+  { "id": 1, "name": "电商", "code": "电商", "description": "电子商务领域评估", "scenario": "你所在的电商平台每天处理百万级订单和商品数据" }
+]
+```
+
+### `POST /api/questions-bank/domains`
+
+新建领域。
+
+```json
+{ "code": "医疗", "name": "医疗健康", "description": "医疗健康领域评估", "scenario": "你所在的医疗平台..." }
+```
+
+### `PUT /api/questions-bank/domains/:code`
+
+更新领域（编码不可修改）。
+
+```json
+{ "name": "医疗健康", "description": "...", "scenario": "..." }
+```
+
+### `DELETE /api/questions-bank/domains/:code`
+
+删除领域及其所有题目。
+
+### `GET /api/questions-bank/questions?domain=电商&level=L1`
+
+查询题目，支持 `domain` 和 `level` 过滤。
+
+```json
+[
+  { "id": "L1_001", "domain_code": "电商", "level": "L1", "title": "修复一个包含NPE的API接口", "difficulty": "入门", "dimensions": ["C", "H"], "hints": ["关注边界条件"] }
+]
+```
+
+### `POST /api/questions-bank/questions`
+
+新建题目。`id` 可选，不传时自动生成（如 `L1_013`）。
+
+```json
+{ "domain_code": "电商", "level": "L1", "title": "新题目", "difficulty": "入门", "time_limit": 60, "dimensions": ["C", "H"], "description": "描述", "hints": ["提示1", "提示2"] }
+```
+
+### `PUT /api/questions-bank/questions/:id`
+
+更新题目。字段与创建相同，`id` 和 `domain_code` 不可修改。
+
+### `DELETE /api/questions-bank/questions/:id`
+
+删除题目。
+
 ## 静态文件
 
 服务器同时提供 `src/` 目录的静态文件服务：
 
 | 路径 | 文件 |
 |------|------|
+| `/` | 答题前端 (`quiz.html`) |
 | `/quiz.html` | 答题前端 |
 | `/review.html` | 审阅前端 |
+| `/question-bank.html` | 题库管理前端 |
 | `/*.js`, `/*.css` | 资源文件 |
