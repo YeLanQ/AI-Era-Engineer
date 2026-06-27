@@ -559,7 +559,7 @@ function renderQuestions() {
       <td><span class="q-meta">${q.time_limit}min</span></td>
       <td>
         <button class="btn btn-secondary btn-xs" onclick="openQuestionModal('${q.id}')">编辑</button>
-        <button class="btn btn-danger btn-xs" onclick="confirmDeleteQuestion('${q.id}')">删除</button>
+        <button class="btn btn-danger btn-xs" onclick="confirmDeleteQuestion('${q.id}', '${q.domain_code}')">删除</button>
       </td>
     </tr>`;
   }).join('');
@@ -749,8 +749,8 @@ function confirmDeleteDomain(code) {
   document.getElementById('modal-confirm').classList.add('show');
 }
 
-function confirmDeleteQuestion(id) {
-  deleteTarget = { type: 'question', id };
+function confirmDeleteQuestion(id, domain_code) {
+  deleteTarget = { type: 'question', id, domain_code };
   const q = questions.find(x => x.id === id);
   document.getElementById('confirm-title').textContent = '删除题目';
   document.getElementById('confirm-message').textContent =
@@ -773,7 +773,7 @@ async function executeDelete() {
       }
       await loadDomains();
     } else {
-      await api('/api/questions-bank/questions/' + encodeURIComponent(deleteTarget.id), { method: 'DELETE' });
+      await api('/api/questions-bank/questions/' + encodeURIComponent(deleteTarget.id) + '?domain=' + encodeURIComponent(deleteTarget.domain_code), { method: 'DELETE' });
       showToast('题目已删除', 'success');
       await loadDomains();
       await loadQuestions();

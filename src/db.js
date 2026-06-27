@@ -31,7 +31,7 @@ export async function initDB() {
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS questions (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL,
     domain_code TEXT NOT NULL,
     level TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -43,6 +43,7 @@ export async function initDB() {
     hints TEXT DEFAULT '[]',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (id, domain_code),
     FOREIGN KEY (domain_code) REFERENCES domains(code) ON DELETE CASCADE
   )`);
 
@@ -125,7 +126,11 @@ export function getQuestions({ domain, level } = {}) {
   return q(sql, params).map(normalizeQuestion);
 }
 
-export function getQuestion(id) {
+export function getQuestion(id, domain_code) {
+  if (domain_code) {
+    const row = qOne('SELECT * FROM questions WHERE id = ? AND domain_code = ?', [id, domain_code]);
+    return row ? normalizeQuestion(row) : null;
+  }
   const row = qOne('SELECT * FROM questions WHERE id = ?', [id]);
   return row ? normalizeQuestion(row) : null;
 }
@@ -135,18 +140,22 @@ export function createQuestion({ id, domain_code, level, title, difficulty, ai_a
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, domain_code, level, title, difficulty || '', ai_allowed ?? 1, time_limit || 60,
      description || '', JSON.stringify(dimensions || []), JSON.stringify(hints || [])]);
-  return getQuestion(id);
+  return getQuestion(id, domain_code);
 }
 
-export function updateQuestion(id, { title, difficulty, ai_allowed, time_limit, description, dimensions, hints }) {
-  exec(`UPDATE questions SET title = ?, difficulty = ?, ai_allowed = ?, time_limit = ?, description = ?, dimensions = ?, hints = ?, updated_at = datetime('now') WHERE id = ?`,
+export function updateQuestion(id, domain_code, { title, difficulty, ai_allowed, time_limit, description, dimensions, hints }) {
+  exec(`UPDATE questions SET title = ?, difficulty = ?, ai_allowed = ?, time_limit = ?, description = ?, dimensions = ?, hints = ?, updated_at = datetime('now') WHERE id = ? AND domain_code = ?`,
     [title, difficulty || '', ai_allowed ?? 1, time_limit || 60,
-     description || '', JSON.stringify(dimensions || []), JSON.stringify(hints || []), id]);
-  return getQuestion(id);
+     description || '', JSON.stringify(dimensions || []), JSON.stringify(hints || []), id, domain_code]);
+  return getQuestion(id, domain_code);
 }
 
-export function deleteQuestion(id) {
-  exec('DELETE FROM questions WHERE id = ?', [id]);
+export function deleteQuestion(id, domain_code) {
+  if (domain_code) {
+    exec('DELETE FROM questions WHERE id = ? AND domain_code = ?', [id, domain_code]);
+  } else {
+    exec('DELETE FROM questions WHERE id = ?', [id]);
+  }
 }
 
 export function getNextQuestionId(domain_code, level) {
@@ -178,7 +187,7 @@ export function seedFromJSON() {
     if (!existsSync(filePath)) continue;
     const questions = JSON.parse(readFileSync(filePath, 'utf-8'));
     const rows = questions.map(q => {
-      const existingQ = getQuestion(q.id);
+      const existingQ = getQuestion(q.id, dc.code);
       if (existingQ) return null;
       return {
         id: q.id,

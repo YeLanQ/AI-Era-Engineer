@@ -487,7 +487,7 @@ async function handleAPI(req, res) {
         return;
       }
       const nextId = body.id || getNextQuestionId(body.domain_code, body.level);
-      const existing = getQuestion(nextId);
+      const existing = getQuestion(nextId, body.domain_code);
       if (existing) {
         sendError(res, 409, 'Question ID already exists: ' + nextId);
         return;
@@ -507,13 +507,13 @@ async function handleAPI(req, res) {
   if (questionUpdateMatch && req.method === 'PUT') {
     try {
       const id = decodeURIComponent(questionUpdateMatch[1]);
-      const existing = getQuestion(id);
+      const body = await parseBody(req);
+      const existing = getQuestion(id, body.domain_code);
       if (!existing) {
         sendError(res, 404, 'Question not found');
         return;
       }
-      const body = await parseBody(req);
-      const question = updateQuestion(id, body);
+      const question = updateQuestion(id, body.domain_code, body);
       const { clearQuestionCache } = await import('./load-question-bank.js');
       clearQuestionCache();
       sendJSON(res, 200, question);
@@ -527,12 +527,17 @@ async function handleAPI(req, res) {
   if (questionUpdateMatch && req.method === 'DELETE') {
     try {
       const id = decodeURIComponent(questionUpdateMatch[1]);
-      const existing = getQuestion(id);
+      const domain_code = url.searchParams.get('domain');
+      if (!domain_code) {
+        sendError(res, 400, 'domain query parameter is required');
+        return;
+      }
+      const existing = getQuestion(id, domain_code);
       if (!existing) {
         sendError(res, 404, 'Question not found');
         return;
       }
-      deleteQuestion(id);
+      deleteQuestion(id, domain_code);
       const { clearQuestionCache } = await import('./load-question-bank.js');
       clearQuestionCache();
       sendJSON(res, 200, { message: 'Question deleted' });
